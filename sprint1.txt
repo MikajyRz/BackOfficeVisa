@@ -1,0 +1,14 @@
+visa(transformable)=afaka transformena aveo rehefa lany -> mivadika visa ........
+-rehefa tapitra = demande visa long sejour(pas transformable)
+
+Application
+sprint1 nouvelle demande
+-demande visa
+-etat civil (info visa,info sepecifique)
+-visa:etudiant(inscrit taiza),travailleur(contrat de travail).
+
+.nb:demande misy type 
+
+.Final:mahazo carte resident sy visa 
+
+-nouveau titre , transfert de visa , duplicata
