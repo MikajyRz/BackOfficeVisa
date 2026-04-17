@@ -12,3 +12,26 @@ sprint1 nouvelle demande
 .Final:mahazo carte resident sy visa 
 
 -nouveau titre , transfert de visa , duplicata
+
+-etat (dossier creer) natao saisie champ obligatoire, cocher piece justificatif obligatoire de aveo afaka modifiena
+ny info saisie
+-rehefa vita saisie afapo (imprimena le info dans bdd) de jerena oe marina / rehefa diso de modifiena
+
+-rehefa marina de scan dossier physique (sary) atachena amle demande (dossier vita scan terminer donc tsy azo ovaina dossier
+teo aloha)
+
+
+-visa approuver status farany ndrindra lie am demande iny 
+
+
+-https://l.facebook.com/l.php?u=https%3A%2F%2Fconsuladomadagascar.org%2Fwp-content%2Fuploads%2FVisado-de-larga-duracio%25CC%2581n-Formulario.pdf&h=AT4oD0G4XOn4T0Ll_IkZV48J89mSjYx32d1bmjKQMBTvvCchLdFqEXK0UEGTD8IJJ7JUZYZpyMYYrSl8HjwkVpO7OG4ekbrsFSxSWWyYbU_URc62nxXcX_jxSjcxYjM&s=1
+-https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.madagascar-services.com%2Fblog%2Ffr%2F2017%2F03%2F07%2Fcarte-de-resident-visa-biometrique-a-madagascar%2F&h=AT6VUKq7_67p-XdTnb5A7x7yZAmPwdHLnYlcJ3h5-plxHHZkBw4zrRdg7yh2fJleX5is4sJd5gRynUo5Qcmly0FaOuu3qQjZP1ToAaZINE5wyeTD1zCDzCrx-l7nwBM&s=1
+
+
+
+-demandeur:nom , prenom, date nee, adresse mada , situation-id(obli), nationalite(obli) 
+-passeport: numero, date delivr, date exp , numero ,mail
+-situation_fam:
+-nationalite:
+-demandeur:
+
