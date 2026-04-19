@@ -1,0 +1,185 @@
+===========================================
+GUIDE COMPLET : PREMIÈRE DEMANDE DE VISA + CARTE DE RÉSIDENT (MADAGASCAR)
+===========================================
+
+-------------------------------------------
+1. REQUÊTES SQL POUR INITIALISER LA BASE DE DONNÉES
+-------------------------------------------
+
+-- Types de visas
+INSERT INTO type_visa (libelle) VALUES
+('Investisseur'),
+('Travailleur');
+
+-- Types de demandes (incluant les nouveaux types)
+INSERT INTO Type_demande (libelle) VALUES
+('Nouveau titre'),
+('Duplicata'),
+('Transfert de visa');
+
+-- Statuts de demande
+INSERT INTO Statut_demande (id, statut) VALUES
+(1, 'Brouillon'),
+(2, 'Soumise'),
+(3, 'En cours de traitement'),
+(4, 'Validée'),
+(5, 'Rejetée');
+
+-- Pièces justificatives communes
+INSERT INTO Type_piece_commune (libelle, obligatoire) VALUES
+('02 photos d''identité récentes', TRUE),
+('Notice de renseignement', TRUE),
+('Demande écrite adressée au Ministère de l''Intérieur', TRUE),
+('Photocopie certifiée de la première page du passeport', TRUE),
+('Certificat de résidence ou attestation d''hébergement', TRUE),
+('Extrait de casier judiciaire (< 3 mois)', TRUE);
+
+-- Pièces spécifiques par type de visa
+-- Investisseur
+INSERT INTO Type_piece_specifique (libelle, id_type_visa, obligatoire) VALUES
+('Statut de la Société', 1, TRUE),
+('Extrait d''inscription au registre de commerce', 1, TRUE),
+('Carte fiscale', 1, TRUE);
+
+-- Travailleur
+INSERT INTO Type_piece_specifique (libelle, id_type_visa, obligatoire) VALUES
+('Contrat de travail', 2, TRUE),
+('Autorisation de travail', 2, TRUE);
+
+-- Étudiant
+INSERT INTO Type_piece_specifique (libelle, id_type_visa, obligatoire) VALUES
+('Certificat d''inscription dans un établissement agréé', 3, TRUE),
+('Preuve de moyens financiers', 3, TRUE);
+
+-------------------------------------------
+2. ÉTAPES DÉTAILLÉES POUR LE DEMANDEUR
+-------------------------------------------
+
+1. **Préparation des documents** :
+   - Rassemblez toutes les pièces justificatives (communes + spécifiques).
+   - Vérifiez que les documents sont valides et traduits en français si nécessaire.
+
+2. **Remplissage du formulaire** :
+   - Complétez le formulaire de demande (voir section 3).
+   - Indiquez clairement le type de demande (ex: "Première demande de visa + carte de résident").
+
+3. **Soumission de la demande** :
+   - Envoyez le dossier complet au Ministère de l'Intérieur et de la Décentralisation.
+   - Conservez une copie de tous les documents soumis.
+
+4. **Suivi de la demande** :
+   - Vérifiez régulièrement le statut de votre demande.
+   - Répondez rapidement à toute demande de complément d'information.
+
+-------------------------------------------
+3. FORMULAIRE DE DEMANDE
+-------------------------------------------
+
+[FORMULAIRE À REMPLIR]
+
+**Informations personnelles**
+Nom : ________________________________
+Prénom : _____________________________
+Date de naissance : __/__/____
+Lieu de naissance : ___________________
+Nationalité : _________________________
+Adresse à Madagascar : ________________
+Email : _______________________________
+Téléphone : ___________________________
+
+**Informations du passeport**
+Numéro de passeport : _________________
+Date de délivrance : __/__/____
+Date d'expiration : __/__/____
+Lieu de délivrance : ___________________
+
+**Type de demande**
+☐ Première demande de visa + carte de résident
+☐ Renouvellement de carte de résident
+☐ Transformation de visa en carte de résident
+☐ Nouveau titre
+☐ Duplicata
+☐ Transfert de visa
+
+**Type de visa demandé**
+☐ Investisseur
+☐ Travailleur
+☐ Étudiant
+☐ Regroupement familial
+☐ Visiteur
+
+**Pièces jointes** (cochez les cases)
+☐ 02 photos d'identité récentes
+☐ Notice de renseignement
+☐ Demande écrite adressée au Ministère
+☐ Photocopie certifiée de la première page du passeport
+☐ Certificat de résidence ou attestation d'hébergement
+☐ Extrait de casier judiciaire (< 3 mois)
+☐ Autres pièces spécifiques (précisez) : ________________________________
+
+Date : __/__/____
+Signature : ___________________________
+
+-------------------------------------------
+4. LISTE DES PIÈCES JUSTIFICATIVES
+-------------------------------------------
+
+**Pièces communes (obligatoires pour toutes les demandes)**
+- 02 photos d'identité récentes
+- Notice de renseignement
+- Demande écrite adressée au Ministère de l'Intérieur
+- Photocopie certifiée de la première page du passeport
+- Certificat de résidence ou attestation d'hébergement
+- Extrait de casier judiciaire (< 3 mois)
+
+**Pièces spécifiques par type de visa**
+
+**Investisseur**
+- Statut de la Société
+- Extrait d'inscription au registre de commerce
+- Carte fiscale
+
+**Travailleur**
+- Contrat de travail
+- Autorisation de travail
+
+**Étudiant**
+- Certificat d'inscription dans un établissement agréé
+- Preuve de moyens financiers
+
+**Regroupement familial**
+- Acte de mariage ou acte de naissance (selon le cas)
+- Preuve de lien familial
+
+-------------------------------------------
+5. RÉSUMÉ DES TABLES UTILISÉES
+-------------------------------------------
+
+| Table                     | Description                                                                 | Champs principaux                                                                 |
+|---------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| `type_visa`               | Types de visas disponibles                                                  | `id`, `libelle`                                                                   |
+| `Type_demande`            | Types de demandes possibles                                                 | `id`, `libelle`                                                                   |
+| `Statut_demande`          | Statuts possibles d'une demande                                             | `id`, `statut`                                                                    |
+| `Type_piece_commune`      | Pièces justificatives communes à toutes les demandes                       | `id`, `libelle`, `obligatoire`                                                    |
+| `Type_piece_specifique`   | Pièces justificatives spécifiques par type de visa                          | `id`, `libelle`, `id_type_visa`, `obligatoire`                                    |
+| `Demandeur`               | Informations personnelles du demandeur                                      | `id`, `nom`, `prenom`, `date_naissance`, `lieu_naissance`, `nationalite`, `adresse`|
+| `Passeport`               | Informations du passeport du demandeur                                      | `id`, `numero`, `date_delivrance`, `date_expiration`, `lieu_delivrance`           |
+| `Demande`                 | Informations sur la demande                                                 | `id`, `id_demandeur`, `id_type_demande`, `id_statut`, `date_soumission`           |
+| `Piece_demande`           | Pièces justificatives fournies pour une demande                             | `id`, `id_demande`, `id_type_piece_commune`, `fichier`                            |
+| `Piece_demande_specifique`| Pièces spécifiques fournies pour une demande                                | `id`, `id_demande`, `id_type_piece_specifique`, `fichier`                         |
+| `Visa`                    | Informations sur le visa délivré                                            | `id`, `id_demande`, `id_type_visa`, `date_debut`, `date_fin`                      |
+| `carte_resident`          | Informations sur la carte de résident délivrée                              | `id`, `id_demande`, `date_debut`, `date_fin`                                      |
+
+-------------------------------------------
+6. NOTES ET RECOMMANDATIONS
+-------------------------------------------
+
+- **Validité des documents** : Assurez-vous que toutes les pièces justificatives sont valides et à jour.
+- **Traduction** : Les documents en langue étrangère doivent être traduits en français par un traducteur assermenté.
+- **Délais** : Prévoyez un délai suffisant pour la préparation et le traitement de votre demande.
+- **Suivi** : Conservez une copie de tous les documents soumis et notez les références de votre demande pour un suivi efficace.
+- **Contact** : Pour toute question, contactez le Ministère de l'Intérieur et de la Décentralisation.
+
+===========================================
+FIN DU GUIDE
+===========================================

@@ -3,10 +3,521 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Initialisation VISA</title>
+  <title>Demande de Visa et Carte de Résident</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; text-align: center; }
+    .header h1 { font-size: 1.6em; margin-bottom: 5px; }
+    .header p { opacity: 0.85; font-size: 0.95em; }
+    .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
+
+    /* Stepper */
+    .stepper { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; flex-wrap: wrap; }
+    .step-indicator { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; background: #dfe6e9; font-size: 0.85em; font-weight: 600; transition: all 0.3s; }
+    .step-indicator.active { background: #2980b9; color: #fff; }
+    .step-indicator.done { background: #27ae60; color: #fff; }
+    .step-indicator .num { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.8em; }
+
+    /* Card */
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 20px; }
+    .card h2 { color: #1a5276; margin-bottom: 20px; font-size: 1.2em; border-bottom: 2px solid #ebf5fb; padding-bottom: 10px; }
+    .step-section { display: none; }
+    .step-section.active { display: block; }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-weight: 600; margin-bottom: 5px; font-size: 0.9em; color: #555; }
+    .form-group label .req { color: #e74c3c; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 10px 12px; border: 1.5px solid #dcdde1; border-radius: 6px; font-size: 0.95em;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,0.15);
+    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+
+    /* Pieces */
+    .pieces-section h3 { font-size: 1em; color: #1a5276; margin: 15px 0 10px; }
+    .piece-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ecf0f1; border-radius: 6px; margin-bottom: 8px; transition: background 0.2s; }
+    .piece-item:hover { background: #ebf5fb; }
+    .piece-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2980b9; }
+    .piece-item label { cursor: pointer; flex: 1; font-size: 0.93em; }
+    .piece-item .badge { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .badge.obligatoire { background: #fdecea; color: #c0392b; }
+    .badge.facultatif { background: #eafaf1; color: #27ae60; }
+
+    /* Recap */
+    .recap-table { width: 100%; border-collapse: collapse; }
+    .recap-table th, .recap-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf0f1; font-size: 0.93em; }
+    .recap-table th { background: #f8f9fa; color: #555; font-weight: 600; width: 40%; }
+
+    /* Buttons */
+    .btn-row { display: flex; justify-content: space-between; margin-top: 25px; gap: 12px; }
+    .btn { padding: 12px 28px; border: none; border-radius: 6px; font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #2980b9; color: #fff; }
+    .btn-primary:hover { background: #1a6fa0; }
+    .btn-secondary { background: #95a5a6; color: #fff; }
+    .btn-secondary:hover { background: #7f8c8d; }
+    .btn-success { background: #27ae60; color: #fff; }
+    .btn-success:hover { background: #219a52; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Alert */
+    .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: none; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+    /* Result */
+    .result-card { text-align: center; padding: 40px; }
+    .result-card .icon { font-size: 3em; margin-bottom: 15px; }
+    .result-card h2 { color: #27ae60; margin-bottom: 10px; }
+    .result-card .ref { background: #f8f9fa; padding: 12px 20px; border-radius: 8px; display: inline-block; margin-top: 15px; font-size: 1.1em; font-weight: 600; }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .stepper { gap: 5px; }
+      .step-indicator { font-size: 0.75em; padding: 6px 10px; }
+    }
+  </style>
 </head>
 <body>
-  <h1>Initialisation VISA</h1>
-  <p>Bienvenue sur la page Initialisation VISA.</p>
+
+<div class="header">
+  <h1>Ministère de l'Intérieur et de la Décentralisation</h1>
+  <p>Formulaire de demande de Visa et Carte de Résident — Madagascar</p>
+</div>
+
+<div class="container">
+  <div class="stepper">
+    <div class="step-indicator active" id="step-ind-1"><span class="num">1</span> Identité</div>
+    <div class="step-indicator" id="step-ind-2"><span class="num">2</span> Passeport</div>
+    <div class="step-indicator" id="step-ind-3"><span class="num">3</span> Demande</div>
+    <div class="step-indicator" id="step-ind-4"><span class="num">4</span> Pièces</div>
+    <div class="step-indicator" id="step-ind-5"><span class="num">5</span> Récapitulatif</div>
+  </div>
+
+  <div id="alert" class="alert"></div>
+
+  <!-- ÉTAPE 1 : Informations personnelles -->
+  <div class="card step-section active" id="step-1">
+    <h2>1. Informations personnelles</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nom <span class="req">*</span></label>
+        <input type="text" id="nom" required />
+      </div>
+      <div class="form-group">
+        <label>Prénom <span class="req">*</span></label>
+        <input type="text" id="prenom" required />
+      </div>
+      <div class="form-group">
+        <label>Date de naissance <span class="req">*</span></label>
+        <input type="date" id="dateNaissance" required />
+      </div>
+      <div class="form-group">
+        <label>Lieu de naissance <span class="req">*</span></label>
+        <input type="text" id="lieuNaissance" required />
+      </div>
+      <div class="form-group">
+        <label>Nationalité <span class="req">*</span></label>
+        <select id="idNationalite"><option value="">-- Choisir --</option></select>
+      </div>
+      <div class="form-group">
+        <label>Situation familiale <span class="req">*</span></label>
+        <select id="idSituationFamiliale"><option value="">-- Choisir --</option></select>
+      </div>
+      <div class="form-group">
+        <label>Téléphone <span class="req">*</span></label>
+        <input type="tel" id="telephone" required />
+      </div>
+      <div class="form-group">
+        <label>Email <span class="req">*</span></label>
+        <input type="email" id="email" required />
+      </div>
+      <div class="form-group full">
+        <label>Adresse à Madagascar <span class="req">*</span></label>
+        <textarea id="adresse" rows="2" required></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <div></div>
+      <button class="btn btn-primary" onclick="nextStep(1)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 2 : Passeport -->
+  <div class="card step-section" id="step-2">
+    <h2>2. Informations du passeport</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Numéro de passeport <span class="req">*</span></label>
+        <input type="text" id="numeroPasseport" required />
+      </div>
+      <div class="form-group">
+        <label>Pays de délivrance <span class="req">*</span></label>
+        <input type="text" id="paysDelivrance" required />
+      </div>
+      <div class="form-group">
+        <label>Date de délivrance <span class="req">*</span></label>
+        <input type="date" id="dateDelivrancePasseport" required />
+      </div>
+      <div class="form-group">
+        <label>Date d'expiration <span class="req">*</span></label>
+        <input type="date" id="dateExpirationPasseport" required />
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep(2)">← Précédent</button>
+      <button class="btn btn-primary" onclick="nextStep(2)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 3 : Type de demande -->
+  <div class="card step-section" id="step-3">
+    <h2>3. Type de demande</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Type de demande <span class="req">*</span></label>
+        <select id="idTypeDemande"><option value="">-- Choisir --</option></select>
+      </div>
+      <div class="form-group">
+        <label>Type de visa <span class="req">*</span></label>
+        <select id="idTypeVisa" onchange="chargerPiecesSpecifiques()"><option value="">-- Choisir --</option></select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep(3)">← Précédent</button>
+      <button class="btn btn-primary" onclick="nextStep(3)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 4 : Pièces justificatives -->
+  <div class="card step-section" id="step-4">
+    <h2>4. Pièces justificatives</h2>
+    <div class="pieces-section">
+      <h3>Pièces communes (obligatoires pour toutes les demandes)</h3>
+      <div id="pieces-communes"></div>
+      <h3 id="titre-pieces-spec" style="display:none;">Pièces spécifiques au type de visa</h3>
+      <div id="pieces-specifiques"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep(4)">← Précédent</button>
+      <button class="btn btn-primary" onclick="nextStep(4)">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 5 : Récapitulatif -->
+  <div class="card step-section" id="step-5">
+    <h2>5. Récapitulatif de la demande</h2>
+    <div id="recap-content"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="prevStep(5)">← Modifier</button>
+      <button class="btn btn-success" id="btn-soumettre" onclick="soumettreFormulaire()">Enregistrer et Soumettre</button>
+    </div>
+  </div>
+
+  <!-- Résultat -->
+  <div class="card step-section" id="step-result">
+    <div class="result-card">
+      <div class="icon">✅</div>
+      <h2>Demande soumise avec succès !</h2>
+      <p>Votre demande a été enregistrée et soumise.</p>
+      <div class="ref" id="result-ref"></div>
+      <div style="margin-top:20px">
+        <button class="btn btn-primary" onclick="location.reload()">Nouvelle demande</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '';
+  let currentStep = 1;
+  let refData = {};
+
+  // --- Chargement des données de référence ---
+  async function chargerReferences() {
+    try {
+      const [natRes, sitRes, tvRes, tdRes, pcRes] = await Promise.all([
+        fetch(API + '/api/references/nationalites'),
+        fetch(API + '/api/references/situations-familiales'),
+        fetch(API + '/api/references/types-visa'),
+        fetch(API + '/api/references/types-demande'),
+        fetch(API + '/api/references/pieces-communes')
+      ]);
+      refData.nationalites = await natRes.json();
+      refData.situations = await sitRes.json();
+      refData.typesVisa = await tvRes.json();
+      refData.typesDemande = await tdRes.json();
+      refData.piecesCommunes = await pcRes.json();
+
+      remplirSelect('idNationalite', refData.nationalites);
+      remplirSelect('idSituationFamiliale', refData.situations);
+      remplirSelect('idTypeVisa', refData.typesVisa);
+      remplirSelect('idTypeDemande', refData.typesDemande);
+      afficherPiecesCommunes();
+    } catch (e) {
+      showAlert('Erreur lors du chargement des données de référence', 'error');
+    }
+  }
+
+  function remplirSelect(id, items) {
+    const sel = document.getElementById(id);
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.libelle;
+      sel.appendChild(opt);
+    });
+  }
+
+  function afficherPiecesCommunes() {
+    const container = document.getElementById('pieces-communes');
+    container.innerHTML = '';
+    refData.piecesCommunes.forEach(p => {
+      container.innerHTML += `
+        <div class="piece-item">
+          <input type="checkbox" id="pc-${p.id}" value="${p.id}" />
+          <label for="pc-${p.id}">${p.libelle}</label>
+          <span class="badge ${p.obligatoire ? 'obligatoire' : 'facultatif'}">${p.obligatoire ? 'Obligatoire' : 'Facultatif'}</span>
+        </div>`;
+    });
+  }
+
+  async function chargerPiecesSpecifiques() {
+    const typeVisaId = document.getElementById('idTypeVisa').value;
+    const container = document.getElementById('pieces-specifiques');
+    const titre = document.getElementById('titre-pieces-spec');
+    container.innerHTML = '';
+    if (!typeVisaId) { titre.style.display = 'none'; return; }
+
+    try {
+      const res = await fetch(API + '/api/references/pieces-specifiques/' + typeVisaId);
+      refData.piecesSpecifiques = await res.json();
+      if (refData.piecesSpecifiques.length > 0) {
+        titre.style.display = 'block';
+        refData.piecesSpecifiques.forEach(p => {
+          container.innerHTML += `
+            <div class="piece-item">
+              <input type="checkbox" id="ps-${p.id}" value="${p.id}" />
+              <label for="ps-${p.id}">${p.libelle}</label>
+              <span class="badge ${p.obligatoire ? 'obligatoire' : 'facultatif'}">${p.obligatoire ? 'Obligatoire' : 'Facultatif'}</span>
+            </div>`;
+        });
+      } else {
+        titre.style.display = 'none';
+      }
+    } catch (e) {
+      showAlert('Erreur lors du chargement des pièces spécifiques', 'error');
+    }
+  }
+
+  // --- Navigation entre étapes ---
+  function showStep(step) {
+    document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + step).classList.add('active');
+    for (let i = 1; i <= 5; i++) {
+      const ind = document.getElementById('step-ind-' + i);
+      ind.classList.remove('active', 'done');
+      if (i === step) ind.classList.add('active');
+      else if (i < step) ind.classList.add('done');
+    }
+    currentStep = step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function nextStep(from) {
+    hideAlert();
+    if (!validerEtape(from)) return;
+    if (from === 4) afficherRecapitulatif();
+    showStep(from + 1);
+  }
+
+  function prevStep(from) {
+    hideAlert();
+    showStep(from - 1);
+  }
+
+  // --- Validation par étape ---
+  function validerEtape(step) {
+    if (step === 1) {
+      const champs = ['nom', 'prenom', 'dateNaissance', 'lieuNaissance', 'telephone', 'email', 'adresse'];
+      for (const c of champs) {
+        if (!document.getElementById(c).value.trim()) {
+          showAlert('Veuillez remplir le champ : ' + c, 'error'); return false;
+        }
+      }
+      if (!document.getElementById('idNationalite').value) {
+        showAlert('Veuillez choisir une nationalité', 'error'); return false;
+      }
+      if (!document.getElementById('idSituationFamiliale').value) {
+        showAlert('Veuillez choisir une situation familiale', 'error'); return false;
+      }
+    }
+    if (step === 2) {
+      const champs = ['numeroPasseport', 'paysDelivrance', 'dateDelivrancePasseport', 'dateExpirationPasseport'];
+      for (const c of champs) {
+        if (!document.getElementById(c).value.trim()) {
+          showAlert('Veuillez remplir tous les champs du passeport', 'error'); return false;
+        }
+      }
+    }
+    if (step === 3) {
+      if (!document.getElementById('idTypeDemande').value) {
+        showAlert('Veuillez choisir un type de demande', 'error'); return false;
+      }
+      if (!document.getElementById('idTypeVisa').value) {
+        showAlert('Veuillez choisir un type de visa', 'error'); return false;
+      }
+    }
+    if (step === 4) {
+      // Vérifier pièces communes obligatoires
+      for (const p of refData.piecesCommunes) {
+        if (p.obligatoire && !document.getElementById('pc-' + p.id).checked) {
+          showAlert('Pièce obligatoire non cochée : ' + p.libelle, 'error'); return false;
+        }
+      }
+      // Vérifier pièces spécifiques obligatoires
+      if (refData.piecesSpecifiques) {
+        for (const p of refData.piecesSpecifiques) {
+          if (p.obligatoire && !document.getElementById('ps-' + p.id).checked) {
+            showAlert('Pièce spécifique obligatoire non cochée : ' + p.libelle, 'error'); return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  // --- Récapitulatif ---
+  function afficherRecapitulatif() {
+    const v = id => document.getElementById(id).value;
+    const txt = id => { const s = document.getElementById(id); return s.options[s.selectedIndex]?.text || ''; };
+
+    let html = `<table class="recap-table">
+      <tr><th colspan="2" style="background:#ebf5fb;color:#1a5276;">Informations personnelles</th></tr>
+      <tr><th>Nom</th><td>${v('nom')}</td></tr>
+      <tr><th>Prénom</th><td>${v('prenom')}</td></tr>
+      <tr><th>Date de naissance</th><td>${v('dateNaissance')}</td></tr>
+      <tr><th>Lieu de naissance</th><td>${v('lieuNaissance')}</td></tr>
+      <tr><th>Nationalité</th><td>${txt('idNationalite')}</td></tr>
+      <tr><th>Situation familiale</th><td>${txt('idSituationFamiliale')}</td></tr>
+      <tr><th>Téléphone</th><td>${v('telephone')}</td></tr>
+      <tr><th>Email</th><td>${v('email')}</td></tr>
+      <tr><th>Adresse</th><td>${v('adresse')}</td></tr>
+      <tr><th colspan="2" style="background:#ebf5fb;color:#1a5276;">Passeport</th></tr>
+      <tr><th>Numéro</th><td>${v('numeroPasseport')}</td></tr>
+      <tr><th>Pays de délivrance</th><td>${v('paysDelivrance')}</td></tr>
+      <tr><th>Date de délivrance</th><td>${v('dateDelivrancePasseport')}</td></tr>
+      <tr><th>Date d'expiration</th><td>${v('dateExpirationPasseport')}</td></tr>
+      <tr><th colspan="2" style="background:#ebf5fb;color:#1a5276;">Demande</th></tr>
+      <tr><th>Type de demande</th><td>${txt('idTypeDemande')}</td></tr>
+      <tr><th>Type de visa</th><td>${txt('idTypeVisa')}</td></tr>
+      <tr><th colspan="2" style="background:#ebf5fb;color:#1a5276;">Pièces justificatives</th></tr>`;
+
+    refData.piecesCommunes.forEach(p => {
+      const checked = document.getElementById('pc-' + p.id).checked;
+      html += `<tr><th>${p.libelle}</th><td>${checked ? '✅ Fournie' : '❌ Non fournie'}</td></tr>`;
+    });
+    if (refData.piecesSpecifiques) {
+      refData.piecesSpecifiques.forEach(p => {
+        const checked = document.getElementById('ps-' + p.id).checked;
+        html += `<tr><th>${p.libelle}</th><td>${checked ? '✅ Fournie' : '❌ Non fournie'}</td></tr>`;
+      });
+    }
+
+    html += '</table>';
+    document.getElementById('recap-content').innerHTML = html;
+  }
+
+  // --- Soumission ---
+  async function soumettreFormulaire() {
+    const btn = document.getElementById('btn-soumettre');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+
+    const v = id => document.getElementById(id).value;
+
+    const piecesCommunesPresentes = [];
+    refData.piecesCommunes.forEach(p => {
+      if (document.getElementById('pc-' + p.id).checked) piecesCommunesPresentes.push(p.id);
+    });
+
+    const piecesSpecifiquesPresentes = [];
+    if (refData.piecesSpecifiques) {
+      refData.piecesSpecifiques.forEach(p => {
+        if (document.getElementById('ps-' + p.id).checked) piecesSpecifiquesPresentes.push(p.id);
+      });
+    }
+
+    const body = {
+      nom: v('nom'),
+      prenom: v('prenom'),
+      dateNaissance: v('dateNaissance'),
+      lieuNaissance: v('lieuNaissance'),
+      telephone: v('telephone'),
+      email: v('email'),
+      adresse: v('adresse'),
+      idNationalite: parseInt(v('idNationalite')),
+      idSituationFamiliale: parseInt(v('idSituationFamiliale')),
+      numeroPasseport: v('numeroPasseport'),
+      dateDelivrancePasseport: v('dateDelivrancePasseport'),
+      dateExpirationPasseport: v('dateExpirationPasseport'),
+      paysDelivrance: v('paysDelivrance'),
+      idTypeVisa: parseInt(v('idTypeVisa')),
+      idTypeDemande: parseInt(v('idTypeDemande')),
+      piecesCommunesPresentes: piecesCommunesPresentes,
+      piecesSpecifiquesPresentes: piecesSpecifiquesPresentes
+    };
+
+    try {
+      // 1. Créer la demande (brouillon)
+      const resCreate = await fetch(API + '/api/demandes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const dataCreate = await resCreate.json();
+      if (!resCreate.ok) throw new Error(dataCreate.error || 'Erreur lors de la création');
+
+      // 2. Soumettre la demande
+      const resSubmit = await fetch(API + '/api/demandes/' + dataCreate.id + '/soumettre', {
+        method: 'PUT'
+      });
+      const dataSubmit = await resSubmit.json();
+      if (!resSubmit.ok) throw new Error(dataSubmit.error || 'Erreur lors de la soumission');
+
+      // Afficher le résultat
+      document.getElementById('result-ref').textContent = 'Demande N° ' + dataCreate.id + ' — Statut : ' + dataSubmit.statut;
+      document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('step-result').classList.add('active');
+      document.querySelectorAll('.step-indicator').forEach(s => s.classList.add('done'));
+    } catch (e) {
+      showAlert(e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Enregistrer et Soumettre';
+    }
+  }
+
+  // --- Alertes ---
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.className = 'alert alert-' + type;
+    el.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function hideAlert() {
+    document.getElementById('alert').style.display = 'none';
+  }
+
+  // --- Init ---
+  chargerReferences();
+</script>
 </body>
 </html>
