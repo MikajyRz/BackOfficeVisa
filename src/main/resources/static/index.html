@@ -217,7 +217,7 @@
     <div id="recap-content"></div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="prevStep(5)">← Modifier</button>
-      <button class="btn btn-success" id="btn-soumettre" onclick="soumettreFormulaire()">Enregistrer et Soumettre</button>
+      <button class="btn btn-success" id="btn-soumettre" onclick="soumettreFormulaire()">Enregistrer</button>
     </div>
   </div>
 
@@ -225,8 +225,8 @@
   <div class="card step-section" id="step-result">
     <div class="result-card">
       <div class="icon">✅</div>
-      <h2>Demande soumise avec succès !</h2>
-      <p>Votre demande a été enregistrée et soumise.</p>
+      <h2>Dossier créé avec succès !</h2>
+      <p>Votre dossier a été enregistré. Toutes les pièces obligatoires ont été fournies.</p>
       <div class="ref" id="result-ref"></div>
       <div style="margin-top:20px">
         <button class="btn btn-primary" onclick="location.reload()">Nouvelle demande</button>
@@ -476,7 +476,7 @@
     };
 
     try {
-      // 1. Créer la demande (brouillon)
+      // Créer la demande (vérifie les pièces obligatoires → dossier créé)
       const resCreate = await fetch(API + '/api/demandes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -485,22 +485,15 @@
       const dataCreate = await resCreate.json();
       if (!resCreate.ok) throw new Error(dataCreate.error || 'Erreur lors de la création');
 
-      // 2. Soumettre la demande
-      const resSubmit = await fetch(API + '/api/demandes/' + dataCreate.id + '/soumettre', {
-        method: 'PUT'
-      });
-      const dataSubmit = await resSubmit.json();
-      if (!resSubmit.ok) throw new Error(dataSubmit.error || 'Erreur lors de la soumission');
-
       // Afficher le résultat
-      document.getElementById('result-ref').textContent = 'Demande N° ' + dataCreate.id + ' — Statut : ' + dataSubmit.statut;
+      document.getElementById('result-ref').textContent = 'Demande N° ' + dataCreate.id + ' — Statut : ' + dataCreate.statut;
       document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
       document.getElementById('step-result').classList.add('active');
       document.querySelectorAll('.step-indicator').forEach(s => s.classList.add('done'));
     } catch (e) {
       showAlert(e.message, 'error');
       btn.disabled = false;
-      btn.textContent = 'Enregistrer et Soumettre';
+      btn.textContent = 'Enregistrer';
     }
   }
 

@@ -18,7 +18,7 @@ public class Demande {
     private LocalDate dateDemande;
 
     @Column(name = "id_statut", nullable = false)
-    private Integer statut = 1; // 1=Brouillon, 2=Soumise, 3=En cours, 4=Validée, 5=Rejetée
+    private Integer statut = 1; // 1=Dossier créé, 2=Dossier scanné
 
     @ManyToOne
     @JoinColumn(name = "id_demandeur", nullable = false)
@@ -56,11 +56,8 @@ public class Demande {
 
     public String getStatutLibelle() {
         return switch (statut) {
-            case 1 -> "Brouillon";
-            case 2 -> "Soumise";
-            case 3 -> "En cours de traitement";
-            case 4 -> "Validée";
-            case 5 -> "Rejetée";
+            case 1 -> "Dossier créé";
+            case 2 -> "Dossier scanné";
             default -> "Inconnu";
         };
     }

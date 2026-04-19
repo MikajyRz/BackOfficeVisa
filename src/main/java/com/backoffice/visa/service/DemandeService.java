@@ -103,11 +103,8 @@ public class DemandeService {
         demande.setTypeVisa(typeVisa);
         demande.setTypeDemande(typeDemande);
         demande.setDateDemande(LocalDate.now());
-        demande.setStatut(1); // Brouillon
+        demande.setStatut(1); // sera mis à jour après vérification des pièces
         demande = demandeRepository.save(demande);
-
-        // 4. Enregistrer l'historique du statut
-        enregistrerChangementStatut(demande, 1);
 
         // 5. Enregistrer les pièces communes
         List<TypePieceCommune> toutesCommunes = typePieceCommuneRepository.findAll();
@@ -133,95 +130,53 @@ public class DemandeService {
             pieceDemandeSpecifiqueRepository.save(piece);
         }
 
+        // 7. Vérifier que toutes les pièces obligatoires sont fournies → "Dossier créé"
+        boolean toutesObligatoiresFournies = verifierPiecesObligatoires(demande.getId());
+        if (!toutesObligatoiresFournies) {
+            throw new RuntimeException("Toutes les pièces obligatoires doivent être fournies pour créer le dossier");
+        }
+
+        // Statut = Dossier créé (1)
+        enregistrerChangementStatut(demande, 1);
+
         return demande;
     }
 
     /**
-     * Soumettre une demande (passe de Brouillon à Soumise)
+     * Vérifie si toutes les pièces obligatoires (communes + spécifiques) sont fournies
+     */
+    private boolean verifierPiecesObligatoires(Long demandeId) {
+        List<PieceDemande> piecesCommunes = pieceDemandeRepository.findByDemandeId(demandeId);
+        for (PieceDemande p : piecesCommunes) {
+            if (p.getTypePieceCommune().getObligatoire() && !p.getPresente()) {
+                return false;
+            }
+        }
+        List<PieceDemandeSpecifique> piecesSpec = pieceDemandeSpecifiqueRepository.findByDemandeId(demandeId);
+        for (PieceDemandeSpecifique p : piecesSpec) {
+            if (p.getTypePieceSpecifique().getObligatoire() && !p.getPresente()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Scanner le dossier (passe de "Dossier créé" à "Dossier scanné")
+     * Le dossier ne peut plus être modifié après scan
      */
     @Transactional
-    public Demande soumettreDemande(Long demandeId) {
+    public Demande scannerDossier(Long demandeId) {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
         if (demande.getStatut() != 1) {
-            throw new RuntimeException("Seule une demande en brouillon peut être soumise");
+            throw new RuntimeException("Seul un dossier créé peut être scanné. Statut actuel : " + demande.getStatutLibelle());
         }
 
-        // Vérifier que toutes les pièces obligatoires communes sont présentes
-        List<PieceDemande> piecesCommunes = pieceDemandeRepository.findByDemandeId(demandeId);
-        for (PieceDemande p : piecesCommunes) {
-            if (p.getTypePieceCommune().getObligatoire() && !p.getPresente()) {
-                throw new RuntimeException("Pièce obligatoire manquante : " + p.getTypePieceCommune().getLibelle());
-            }
-        }
-
-        // Vérifier que toutes les pièces obligatoires spécifiques sont présentes
-        List<PieceDemandeSpecifique> piecesSpec = pieceDemandeSpecifiqueRepository.findByDemandeId(demandeId);
-        for (PieceDemandeSpecifique p : piecesSpec) {
-            if (p.getTypePieceSpecifique().getObligatoire() && !p.getPresente()) {
-                throw new RuntimeException("Pièce spécifique obligatoire manquante : " + p.getTypePieceSpecifique().getLibelle());
-            }
-        }
-
-        demande.setStatut(2); // Soumise
+        demande.setStatut(2); // Dossier scanné
+        demande.setDateTraitement(LocalDate.now());
         enregistrerChangementStatut(demande, 2);
-        return demandeRepository.save(demande);
-    }
-
-    /**
-     * Valider une demande et générer le visa + carte de résident
-     */
-    @Transactional
-    public Demande validerDemande(Long demandeId) {
-        Demande demande = demandeRepository.findById(demandeId)
-                .orElseThrow(() -> new RuntimeException("Demande introuvable"));
-
-        if (demande.getStatut() != 2 && demande.getStatut() != 3) {
-            throw new RuntimeException("La demande doit être soumise ou en cours de traitement pour être validée");
-        }
-
-        Passeport passeport = passeportRepository.findByDemandeurId(demande.getDemandeur().getId())
-                .orElseThrow(() -> new RuntimeException("Passeport introuvable pour ce demandeur"));
-
-        // Passer en validée
-        demande.setStatut(4);
-        demande.setDateTraitement(LocalDate.now());
-        enregistrerChangementStatut(demande, 4);
-        demande = demandeRepository.save(demande);
-
-        // Créer le visa
-        Visa visa = new Visa();
-        visa.setDemande(demande);
-        visa.setPasseport(passeport);
-        visa.setReference("VISA-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        visa.setDateDebut(LocalDate.now());
-        visa.setDateFin(LocalDate.now().plusYears(2));
-        visaRepository.save(visa);
-
-        // Créer la carte de résident
-        CarteResident carte = new CarteResident();
-        carte.setDemande(demande);
-        carte.setPasseport(passeport);
-        carte.setReference("CR-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        carte.setDateDebut(LocalDate.now());
-        carte.setDateFin(LocalDate.now().plusYears(2));
-        carteResidentRepository.save(carte);
-
-        return demande;
-    }
-
-    /**
-     * Rejeter une demande
-     */
-    @Transactional
-    public Demande rejeterDemande(Long demandeId) {
-        Demande demande = demandeRepository.findById(demandeId)
-                .orElseThrow(() -> new RuntimeException("Demande introuvable"));
-
-        demande.setStatut(5); // Rejetée
-        demande.setDateTraitement(LocalDate.now());
-        enregistrerChangementStatut(demande, 5);
         return demandeRepository.save(demande);
     }
 

@@ -27,49 +27,21 @@ public class DemandeController {
             Map<String, Object> response = new HashMap<>();
             response.put("id", demande.getId());
             response.put("statut", demande.getStatutLibelle());
-            response.put("message", "Demande créée avec succès (brouillon)");
+            response.put("message", "Demande créée — Statut : " + demande.getStatutLibelle());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
-    @PutMapping("/{id}/soumettre")
-    public ResponseEntity<?> soumettreDemande(@PathVariable Long id) {
+    @PutMapping("/{id}/scanner")
+    public ResponseEntity<?> scannerDossier(@PathVariable Long id) {
         try {
-            Demande demande = demandeService.soumettreDemande(id);
+            Demande demande = demandeService.scannerDossier(id);
             Map<String, Object> response = new HashMap<>();
             response.put("id", demande.getId());
             response.put("statut", demande.getStatutLibelle());
-            response.put("message", "Demande soumise avec succès");
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PutMapping("/{id}/valider")
-    public ResponseEntity<?> validerDemande(@PathVariable Long id) {
-        try {
-            Demande demande = demandeService.validerDemande(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", demande.getId());
-            response.put("statut", demande.getStatutLibelle());
-            response.put("message", "Demande validée — Visa et Carte de résident générés");
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PutMapping("/{id}/rejeter")
-    public ResponseEntity<?> rejeterDemande(@PathVariable Long id) {
-        try {
-            Demande demande = demandeService.rejeterDemande(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", demande.getId());
-            response.put("statut", demande.getStatutLibelle());
-            response.put("message", "Demande rejetée");
+            response.put("message", "Dossier scanné — le dossier ne peut plus être modifié");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
