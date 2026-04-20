@@ -7,9 +7,10 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
-    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; text-align: center; }
-    .header h1 { font-size: 1.6em; margin-bottom: 5px; }
-    .header p { opacity: 0.85; font-size: 0.95em; }
+    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.4em; }
+    .header nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 600; opacity: 0.85; transition: opacity 0.2s; }
+    .header nav a:hover { opacity: 1; }
     .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
 
     /* Stepper */
@@ -88,8 +89,11 @@
 <body>
 
 <div class="header">
-  <h1>Ministère de l'Intérieur et de la Décentralisation</h1>
-  <p>Formulaire de demande de Visa et Carte de Résident — Madagascar</p>
+  <h1>Back Office Visa — Madagascar</h1>
+  <nav>
+    <a href="index.html" style="opacity:1; border-bottom: 2px solid #fff; padding-bottom: 3px;">Nouvelle demande</a>
+    <a href="demandes.html">Liste des demandes</a>
+  </nav>
 </div>
 
 <div class="container">
@@ -190,6 +194,34 @@
         <select id="idTypeVisa" onchange="chargerPiecesSpecifiques()"><option value="">-- Choisir --</option></select>
       </div>
     </div>
+
+    <!-- Section Visa Transformable -->
+    <div id="section-visa-transformable" style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ebf5fb;">
+      <h3 style="color:#1a5276; margin-bottom: 15px;">Informations du visa</h3>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Numéro de référence du visa <span class="req">*</span></label>
+          <div style="display:flex; gap:10px; align-items:start;">
+            <input type="text" id="numeroReferenceVisa" placeholder="Entrez le numéro de référence" style="flex:1;" />
+            <button type="button" class="btn btn-primary" style="padding:10px 16px; white-space:nowrap;" onclick="verifierReference()">Vérifier</button>
+          </div>
+          <div id="ref-status" style="margin-top:6px; font-size:0.88em; display:none;"></div>
+        </div>
+        <div class="form-group">
+          <label>Lieu <span class="req">*</span></label>
+          <input type="text" id="lieuVisa" />
+        </div>
+        <div class="form-group">
+          <label>Date de début <span class="req">*</span></label>
+          <input type="date" id="dateDebutVisa" />
+        </div>
+        <div class="form-group">
+          <label>Date de fin <span class="req">*</span></label>
+          <input type="date" id="dateFinVisa" />
+        </div>
+      </div>
+    </div>
+
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="prevStep(3)">← Précédent</button>
       <button class="btn btn-primary" onclick="nextStep(3)">Suivant →</button>
@@ -317,6 +349,40 @@
     }
   }
 
+  // --- Vérifier le numéro de référence du visa ---
+  async function verifierReference() {
+    const numero = document.getElementById('numeroReferenceVisa').value.trim();
+    const statusDiv = document.getElementById('ref-status');
+    if (!numero) {
+      statusDiv.style.display = 'block';
+      statusDiv.style.color = '#e74c3c';
+      statusDiv.textContent = 'Veuillez entrer un numéro de référence';
+      return;
+    }
+    try {
+      const res = await fetch(API + '/api/demandes/visa-reference/' + encodeURIComponent(numero));
+      const data = await res.json();
+      statusDiv.style.display = 'block';
+      if (data.existe) {
+        statusDiv.style.color = '#27ae60';
+        statusDiv.innerHTML = '✅ Visa trouvé — Lieu : <b>' + data.lieu + '</b>, Du <b>' + data.dateDebut + '</b> au <b>' + data.dateFin + '</b>';
+        document.getElementById('lieuVisa').value = data.lieu;
+        document.getElementById('dateDebutVisa').value = data.dateDebut;
+        document.getElementById('dateFinVisa').value = data.dateFin;
+      } else {
+        statusDiv.style.color = '#e67e22';
+        statusDiv.textContent = '⚠️ Visa non trouvé — veuillez remplir les informations ci-dessous pour en créer un nouveau';
+        document.getElementById('lieuVisa').value = '';
+        document.getElementById('dateDebutVisa').value = '';
+        document.getElementById('dateFinVisa').value = '';
+      }
+    } catch (e) {
+      statusDiv.style.display = 'block';
+      statusDiv.style.color = '#e74c3c';
+      statusDiv.textContent = 'Erreur lors de la vérification';
+    }
+  }
+
   // --- Navigation entre étapes ---
   function showStep(step) {
     document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
@@ -374,6 +440,13 @@
       if (!document.getElementById('idTypeVisa').value) {
         showAlert('Veuillez choisir un type de visa', 'error'); return false;
       }
+      // Vérifier les champs visa (tous obligatoires)
+      const champsVT = ['numeroReferenceVisa', 'lieuVisa', 'dateDebutVisa', 'dateFinVisa'];
+      for (const c of champsVT) {
+        if (!document.getElementById(c).value.trim()) {
+          showAlert('Veuillez remplir tous les champs du visa (numéro, lieu, dates)', 'error'); return false;
+        }
+      }
     }
     if (step === 4) {
       // Vérifier pièces communes obligatoires
@@ -408,7 +481,16 @@
       <tr><th>Nationalité</th><td>${txt('idNationalite')}</td></tr>
       <tr><th>Situation familiale</th><td>${txt('idSituationFamiliale')}</td></tr>
       <tr><th>Téléphone</th><td>${v('telephone')}</td></tr>
-      <tr><th>Email</th><td>${v('email')}</td></tr>
+      <tr><th>Email</th><td>${v('email')}</td></tr>`;
+
+    html += `
+      <tr><th colspan="2" style="background:#ebf5fb;color:#1a5276;">Informations du visa</th></tr>
+      <tr><th>Numéro de référence</th><td>${v('numeroReferenceVisa')}</td></tr>
+      <tr><th>Lieu</th><td>${v('lieuVisa')}</td></tr>
+      <tr><th>Date de début</th><td>${v('dateDebutVisa')}</td></tr>
+      <tr><th>Date de fin</th><td>${v('dateFinVisa')}</td></tr>`;
+
+    html += `
       <tr><th>Adresse</th><td>${v('adresse')}</td></tr>
       <tr><th colspan="2" style="background:#ebf5fb;color:#1a5276;">Passeport</th></tr>
       <tr><th>Numéro</th><td>${v('numeroPasseport')}</td></tr>
@@ -472,7 +554,11 @@
       idTypeVisa: parseInt(v('idTypeVisa')),
       idTypeDemande: parseInt(v('idTypeDemande')),
       piecesCommunesPresentes: piecesCommunesPresentes,
-      piecesSpecifiquesPresentes: piecesSpecifiquesPresentes
+      piecesSpecifiquesPresentes: piecesSpecifiquesPresentes,
+      numeroReferenceVisa: v('numeroReferenceVisa'),
+      lieuVisa: v('lieuVisa'),
+      dateDebutVisa: v('dateDebutVisa'),
+      dateFinVisa: v('dateFinVisa')
     };
 
     try {

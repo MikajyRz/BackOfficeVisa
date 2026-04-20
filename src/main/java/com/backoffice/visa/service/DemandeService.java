@@ -27,6 +27,7 @@ public class DemandeService {
     private final PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository;
     private final VisaRepository visaRepository;
     private final CarteResidentRepository carteResidentRepository;
+    private final VisaTransformableRepository visaTransformableRepository;
 
     public DemandeService(
             DemandeurRepository demandeurRepository,
@@ -42,7 +43,8 @@ public class DemandeService {
             PieceDemandeRepository pieceDemandeRepository,
             PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository,
             VisaRepository visaRepository,
-            CarteResidentRepository carteResidentRepository) {
+            CarteResidentRepository carteResidentRepository,
+            VisaTransformableRepository visaTransformableRepository) {
         this.demandeurRepository = demandeurRepository;
         this.passeportRepository = passeportRepository;
         this.demandeRepository = demandeRepository;
@@ -57,6 +59,7 @@ public class DemandeService {
         this.pieceDemandeSpecifiqueRepository = pieceDemandeSpecifiqueRepository;
         this.visaRepository = visaRepository;
         this.carteResidentRepository = carteResidentRepository;
+        this.visaTransformableRepository = visaTransformableRepository;
     }
 
     /**
@@ -92,7 +95,31 @@ public class DemandeService {
         passeport.setPaysDelivrance(form.getPaysDelivrance());
         passeport = passeportRepository.save(passeport);
 
-        // 3. Créer la demande (statut = Brouillon)
+        // 3. Chercher le visa transformable par numéro de référence, sinon créer
+        VisaTransformable visaTransformable = null;
+        if (form.getNumeroReferenceVisa() != null && !form.getNumeroReferenceVisa().isBlank()) {
+            visaTransformable = visaTransformableRepository
+                    .findByNumeroReference(form.getNumeroReferenceVisa())
+                    .orElse(null);
+        }
+        if (visaTransformable == null) {
+            if (form.getNumeroReferenceVisa() == null || form.getNumeroReferenceVisa().isBlank()) {
+                throw new RuntimeException("Le numéro de référence du visa est obligatoire");
+            }
+            if (form.getLieuVisa() == null || form.getDateDebutVisa() == null || form.getDateFinVisa() == null) {
+                throw new RuntimeException("Les informations du visa (lieu, dates) sont obligatoires");
+            }
+            visaTransformable = new VisaTransformable();
+            visaTransformable.setDemandeur(demandeur);
+            visaTransformable.setPasseport(passeport);
+            visaTransformable.setNumeroReference(form.getNumeroReferenceVisa());
+            visaTransformable.setLieu(form.getLieuVisa());
+            visaTransformable.setDateDebut(form.getDateDebutVisa());
+            visaTransformable.setDateFin(form.getDateFinVisa());
+            visaTransformable = visaTransformableRepository.save(visaTransformable);
+        }
+
+        // 4. Créer la demande (statut = Dossier créé)
         TypeVisa typeVisa = typeVisaRepository.findById(form.getIdTypeVisa())
                 .orElseThrow(() -> new RuntimeException("Type de visa introuvable"));
         TypeDemande typeDemande = typeDemandeRepository.findById(form.getIdTypeDemande())
@@ -103,7 +130,8 @@ public class DemandeService {
         demande.setTypeVisa(typeVisa);
         demande.setTypeDemande(typeDemande);
         demande.setDateDemande(LocalDate.now());
-        demande.setStatut(1); // sera mis à jour après vérification des pièces
+        demande.setStatut(1);
+        demande.setVisaTransformable(visaTransformable);
         demande = demandeRepository.save(demande);
 
         // 5. Enregistrer les pièces communes

@@ -2,6 +2,42 @@
 -- BASE DE DONNÉES VISA - PostgreSQL
 -- =============================================
 
+-- Suppression des données
+DELETE FROM Piece_demande_specifique;
+DELETE FROM Piece_demande;
+DELETE FROM carte_resident;
+DELETE FROM Visa;
+DELETE FROM Statut_demande;
+DELETE FROM Demande;
+DELETE FROM Visa_transformable;
+DELETE FROM Passeport;
+DELETE FROM Demandeur;
+DELETE FROM Type_piece_specifique;
+DELETE FROM Type_piece_commune;
+DELETE FROM Type_demande;
+DELETE FROM type_visa;
+DELETE FROM Situation_familiale;
+DELETE FROM Nationalite;
+
+-- Suppression des tables
+DROP TABLE IF EXISTS Piece_demande_specifique;
+DROP TABLE IF EXISTS Piece_demande;
+DROP TABLE IF EXISTS carte_resident;
+DROP TABLE IF EXISTS Visa;
+DROP TABLE IF EXISTS Statut_demande;
+DROP TABLE IF EXISTS Demande;
+DROP TABLE IF EXISTS Visa_transformable;
+DROP TABLE IF EXISTS Passeport;
+DROP TABLE IF EXISTS Demandeur;
+DROP TABLE IF EXISTS Type_piece_specifique;
+DROP TABLE IF EXISTS Type_piece_commune;
+DROP TABLE IF EXISTS Type_demande;
+DROP TABLE IF EXISTS type_visa;
+DROP TABLE IF EXISTS Situation_familiale;
+DROP TABLE IF EXISTS Nationalite;
+
+-- =============================================
+
 CREATE TABLE Nationalite (
     id SERIAL PRIMARY KEY,
     libelle VARCHAR(50) NOT NULL
@@ -52,6 +88,9 @@ CREATE TABLE Visa_transformable (
     id_demandeur INT NOT NULL,
     id_passeport INT NOT NULL,
     numero_reference VARCHAR(50) NOT NULL UNIQUE,
+    lieu VARCHAR(100) NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
     FOREIGN KEY (id_demandeur) REFERENCES Demandeur(id),
     FOREIGN KEY (id_passeport) REFERENCES Passeport(id)
 );

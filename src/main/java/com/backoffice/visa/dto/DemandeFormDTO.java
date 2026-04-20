@@ -26,6 +26,12 @@ public class DemandeFormDTO {
     private Long idTypeVisa;
     private Long idTypeDemande;
 
+    // --- Visa transformable (pour Transfert de visa) ---
+    private String numeroReferenceVisa;
+    private String lieuVisa;
+    private LocalDate dateDebutVisa;
+    private LocalDate dateFinVisa;
+
     // --- Pièces justificatives cochées ---
     private List<Long> piecesCommunesPresentes;
     private List<Long> piecesSpecifiquesPresentes;
@@ -66,4 +72,12 @@ public class DemandeFormDTO {
     public void setPiecesCommunesPresentes(List<Long> piecesCommunesPresentes) { this.piecesCommunesPresentes = piecesCommunesPresentes; }
     public List<Long> getPiecesSpecifiquesPresentes() { return piecesSpecifiquesPresentes; }
     public void setPiecesSpecifiquesPresentes(List<Long> piecesSpecifiquesPresentes) { this.piecesSpecifiquesPresentes = piecesSpecifiquesPresentes; }
+    public String getNumeroReferenceVisa() { return numeroReferenceVisa; }
+    public void setNumeroReferenceVisa(String numeroReferenceVisa) { this.numeroReferenceVisa = numeroReferenceVisa; }
+    public String getLieuVisa() { return lieuVisa; }
+    public void setLieuVisa(String lieuVisa) { this.lieuVisa = lieuVisa; }
+    public LocalDate getDateDebutVisa() { return dateDebutVisa; }
+    public void setDateDebutVisa(LocalDate dateDebutVisa) { this.dateDebutVisa = dateDebutVisa; }
+    public LocalDate getDateFinVisa() { return dateFinVisa; }
+    public void setDateFinVisa(LocalDate dateFinVisa) { this.dateFinVisa = dateFinVisa; }
 }

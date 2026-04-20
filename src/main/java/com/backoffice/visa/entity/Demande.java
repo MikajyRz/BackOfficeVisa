@@ -11,8 +11,9 @@ public class Demande {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "id_visa_transformable")
-    private Long idVisaTransformable;
+    @ManyToOne
+    @JoinColumn(name = "id_visa_transformable")
+    private VisaTransformable visaTransformable;
 
     @Column(name = "date_demande", nullable = false)
     private LocalDate dateDemande;
@@ -39,8 +40,8 @@ public class Demande {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public Long getIdVisaTransformable() { return idVisaTransformable; }
-    public void setIdVisaTransformable(Long idVisaTransformable) { this.idVisaTransformable = idVisaTransformable; }
+    public VisaTransformable getVisaTransformable() { return visaTransformable; }
+    public void setVisaTransformable(VisaTransformable visaTransformable) { this.visaTransformable = visaTransformable; }
     public LocalDate getDateDemande() { return dateDemande; }
     public void setDateDemande(LocalDate dateDemande) { this.dateDemande = dateDemande; }
     public Integer getStatut() { return statut; }
