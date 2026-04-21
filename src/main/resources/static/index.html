@@ -430,6 +430,12 @@
         }
       }
 
+      const dateDelivrancePasseport = document.getElementById('dateDelivrancePasseport').value;
+      const dateExpirationPasseport = document.getElementById('dateExpirationPasseport').value;
+      if (dateExpirationPasseport <= dateDelivrancePasseport) {
+        showAlert("La date d'expiration du passeport doit être strictement supérieure à la date de délivrance", 'error'); return false;
+      }
+
       try {
         const numeroPasseport = document.getElementById('numeroPasseport').value.trim();
         const resPasseport = await fetch(API + '/api/demandes/verifier-passeport/' + encodeURIComponent(numeroPasseport));

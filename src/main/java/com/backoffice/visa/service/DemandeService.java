@@ -76,6 +76,12 @@ public class DemandeService {
         if (numeroVisaDejaUtilise(numeroVisaNormalise)) {
             throw new RuntimeException("Ce numéro de référence du visa est déjà utilisé");
         }
+        if (form.getDateDelivrancePasseport() == null || form.getDateExpirationPasseport() == null) {
+            throw new RuntimeException("Les dates du passeport sont obligatoires");
+        }
+        if (!form.getDateExpirationPasseport().isAfter(form.getDateDelivrancePasseport())) {
+            throw new RuntimeException("La date d'expiration du passeport doit être strictement supérieure à la date de délivrance");
+        }
 
         // 1. Créer le demandeur
         Nationalite nationalite = nationaliteRepository.findById(form.getIdNationalite())
