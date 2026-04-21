@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface PasseportRepository extends JpaRepository<Passeport, Long> {
     Optional<Passeport> findByDemandeurId(Long demandeurId);
+    boolean existsByNumeroPasseport(String numeroPasseport);
 }

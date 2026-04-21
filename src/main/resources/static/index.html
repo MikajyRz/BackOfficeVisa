@@ -203,7 +203,7 @@
           <label>Numéro de référence du visa <span class="req">*</span></label>
           <div style="display:flex; gap:10px; align-items:start;">
             <input type="text" id="numeroReferenceVisa" placeholder="Entrez le numéro de référence" style="flex:1;" />
-            <button type="button" class="btn btn-primary" style="padding:10px 16px; white-space:nowrap;" onclick="verifierReference()">Vérifier</button>
+            <!-- <button type="button" class="btn btn-primary" style="padding:10px 16px; white-space:nowrap;" onclick="verifierReference()">Vérifier</button> -->
           </div>
           <div id="ref-status" style="margin-top:6px; font-size:0.88em; display:none;"></div>
         </div>
@@ -364,11 +364,8 @@
       const data = await res.json();
       statusDiv.style.display = 'block';
       if (data.existe) {
-        statusDiv.style.color = '#27ae60';
-        statusDiv.innerHTML = '✅ Visa trouvé — Lieu : <b>' + data.lieu + '</b>, Du <b>' + data.dateDebut + '</b> au <b>' + data.dateFin + '</b>';
-        document.getElementById('lieuVisa').value = data.lieu;
-        document.getElementById('dateDebutVisa').value = data.dateDebut;
-        document.getElementById('dateFinVisa').value = data.dateFin;
+        statusDiv.style.color = '#e74c3c';
+        statusDiv.textContent = 'Ce numéro de référence est déjà utilisé dans une demande';
       } else {
         statusDiv.style.color = '#e67e22';
         statusDiv.textContent = '⚠️ Visa non trouvé — veuillez remplir les informations ci-dessous pour en créer un nouveau';
@@ -397,9 +394,9 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function nextStep(from) {
+  async function nextStep(from) {
     hideAlert();
-    if (!validerEtape(from)) return;
+    if (!(await validerEtape(from))) return;
     if (from === 4) afficherRecapitulatif();
     showStep(from + 1);
   }
@@ -410,7 +407,7 @@
   }
 
   // --- Validation par étape ---
-  function validerEtape(step) {
+  async function validerEtape(step) {
     if (step === 1) {
       const champs = ['nom', 'prenom', 'dateNaissance', 'lieuNaissance', 'telephone', 'email', 'adresse'];
       for (const c of champs) {
@@ -432,6 +429,20 @@
           showAlert('Veuillez remplir tous les champs du passeport', 'error'); return false;
         }
       }
+
+      try {
+        const numeroPasseport = document.getElementById('numeroPasseport').value.trim();
+        const resPasseport = await fetch(API + '/api/demandes/verifier-passeport/' + encodeURIComponent(numeroPasseport));
+        if (!resPasseport.ok) {
+          throw new Error('Vérification du passeport indisponible');
+        }
+        const dataPasseport = await resPasseport.json();
+        if (dataPasseport.existe) {
+          showAlert('Ce numéro de passeport est déjà utilisé', 'error'); return false;
+        }
+      } catch (e) {
+        showAlert('Impossible de vérifier le numéro de passeport pour le moment', 'error'); return false;
+      }
     }
     if (step === 3) {
       if (!document.getElementById('idTypeDemande').value) {
@@ -446,6 +457,31 @@
         if (!document.getElementById(c).value.trim()) {
           showAlert('Veuillez remplir tous les champs du visa (numéro, lieu, dates)', 'error'); return false;
         }
+      }
+
+      const dateDebutVisa = document.getElementById('dateDebutVisa').value;
+      const dateFinVisa = document.getElementById('dateFinVisa').value;
+      if (dateDebutVisa > dateFinVisa) {
+        showAlert('La date de début du visa doit être antérieure ou égale à la date de fin', 'error'); return false;
+      }
+
+      const dateDemande = new Date().toISOString().slice(0, 10);
+      if (dateDemande < dateDebutVisa || dateDemande > dateFinVisa) {
+        showAlert('La date de la demande doit être comprise dans la période du visa transformable', 'error'); return false;
+      }
+
+      try {
+        const numeroVisa = document.getElementById('numeroReferenceVisa').value.trim();
+        const resVisa = await fetch(API + '/api/demandes/verifier-numero-visa/' + encodeURIComponent(numeroVisa));
+        if (!resVisa.ok) {
+          throw new Error('Vérification du visa indisponible');
+        }
+        const dataVisa = await resVisa.json();
+        if (dataVisa.existe) {
+          showAlert('Ce numéro de référence du visa est déjà utilisé', 'error'); return false;
+        }
+      } catch (e) {
+        showAlert('Impossible de vérifier le numéro de référence du visa pour le moment', 'error'); return false;
       }
     }
     if (step === 4) {

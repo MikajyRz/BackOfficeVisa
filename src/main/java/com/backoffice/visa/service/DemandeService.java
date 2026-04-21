@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class DemandeService {
@@ -68,6 +67,16 @@ public class DemandeService {
      */
     @Transactional
     public Demande creerDemande(DemandeFormDTO form) {
+        String numeroPasseportNormalise = normaliserNumero(form.getNumeroPasseport());
+        String numeroVisaNormalise = normaliserNumero(form.getNumeroReferenceVisa());
+
+        if (numeroPasseportDejaUtilise(numeroPasseportNormalise)) {
+            throw new RuntimeException("Ce numéro de passeport est déjà utilisé");
+        }
+        if (numeroVisaDejaUtilise(numeroVisaNormalise)) {
+            throw new RuntimeException("Ce numéro de référence du visa est déjà utilisé");
+        }
+
         // 1. Créer le demandeur
         Nationalite nationalite = nationaliteRepository.findById(form.getIdNationalite())
                 .orElseThrow(() -> new RuntimeException("Nationalité introuvable"));
@@ -89,35 +98,36 @@ public class DemandeService {
         // 2. Créer le passeport
         Passeport passeport = new Passeport();
         passeport.setDemandeur(demandeur);
-        passeport.setNumeroPasseport(form.getNumeroPasseport());
+        passeport.setNumeroPasseport(numeroPasseportNormalise);
         passeport.setDateDelivrance(form.getDateDelivrancePasseport());
         passeport.setDateExpiration(form.getDateExpirationPasseport());
         passeport.setPaysDelivrance(form.getPaysDelivrance());
         passeport = passeportRepository.save(passeport);
 
-        // 3. Chercher le visa transformable par numéro de référence, sinon créer
-        VisaTransformable visaTransformable = null;
-        if (form.getNumeroReferenceVisa() != null && !form.getNumeroReferenceVisa().isBlank()) {
-            visaTransformable = visaTransformableRepository
-                    .findByNumeroReference(form.getNumeroReferenceVisa())
-                    .orElse(null);
+        // 3. Créer le visa transformable
+        if (numeroVisaNormalise == null || numeroVisaNormalise.isBlank()) {
+            throw new RuntimeException("Le numéro de référence du visa est obligatoire");
         }
-        if (visaTransformable == null) {
-            if (form.getNumeroReferenceVisa() == null || form.getNumeroReferenceVisa().isBlank()) {
-                throw new RuntimeException("Le numéro de référence du visa est obligatoire");
-            }
-            if (form.getLieuVisa() == null || form.getDateDebutVisa() == null || form.getDateFinVisa() == null) {
-                throw new RuntimeException("Les informations du visa (lieu, dates) sont obligatoires");
-            }
-            visaTransformable = new VisaTransformable();
-            visaTransformable.setDemandeur(demandeur);
-            visaTransformable.setPasseport(passeport);
-            visaTransformable.setNumeroReference(form.getNumeroReferenceVisa());
-            visaTransformable.setLieu(form.getLieuVisa());
-            visaTransformable.setDateDebut(form.getDateDebutVisa());
-            visaTransformable.setDateFin(form.getDateFinVisa());
-            visaTransformable = visaTransformableRepository.save(visaTransformable);
+        if (form.getLieuVisa() == null || form.getDateDebutVisa() == null || form.getDateFinVisa() == null) {
+            throw new RuntimeException("Les informations du visa (lieu, dates) sont obligatoires");
         }
+        if (form.getDateDebutVisa().isAfter(form.getDateFinVisa())) {
+            throw new RuntimeException("La date de début du visa doit être antérieure ou égale à la date de fin");
+        }
+
+        LocalDate dateDemande = LocalDate.now();
+        if (dateDemande.isBefore(form.getDateDebutVisa()) || dateDemande.isAfter(form.getDateFinVisa())) {
+            throw new RuntimeException("La date de la demande doit être comprise dans la période du visa transformable");
+        }
+
+        VisaTransformable visaTransformable = new VisaTransformable();
+        visaTransformable.setDemandeur(demandeur);
+        visaTransformable.setPasseport(passeport);
+        visaTransformable.setNumeroReference(numeroVisaNormalise);
+        visaTransformable.setLieu(form.getLieuVisa());
+        visaTransformable.setDateDebut(form.getDateDebutVisa());
+        visaTransformable.setDateFin(form.getDateFinVisa());
+        visaTransformable = visaTransformableRepository.save(visaTransformable);
 
         // 4. Créer la demande (statut = Dossier créé)
         TypeVisa typeVisa = typeVisaRepository.findById(form.getIdTypeVisa())
@@ -129,7 +139,7 @@ public class DemandeService {
         demande.setDemandeur(demandeur);
         demande.setTypeVisa(typeVisa);
         demande.setTypeDemande(typeDemande);
-        demande.setDateDemande(LocalDate.now());
+        demande.setDateDemande(dateDemande);
         demande.setStatut(1);
         demande.setVisaTransformable(visaTransformable);
         demande = demandeRepository.save(demande);
@@ -221,6 +231,29 @@ public class DemandeService {
      */
     public List<Demande> getAllDemandes() {
         return demandeRepository.findAll();
+    }
+
+    public boolean numeroPasseportDejaUtilise(String numeroPasseport) {
+        String numeroNormalise = normaliserNumero(numeroPasseport);
+        if (numeroNormalise == null || numeroNormalise.isBlank()) {
+            return false;
+        }
+        return passeportRepository.existsByNumeroPasseport(numeroNormalise);
+    }
+
+    public boolean numeroVisaDejaUtilise(String numeroReferenceVisa) {
+        String numeroNormalise = normaliserNumero(numeroReferenceVisa);
+        if (numeroNormalise == null || numeroNormalise.isBlank()) {
+            return false;
+        }
+        return demandeRepository.existsByVisaTransformableNumeroReference(numeroNormalise);
+    }
+
+    private String normaliserNumero(String numero) {
+        if (numero == null) {
+            return null;
+        }
+        return numero.trim().toUpperCase();
     }
 
     private void enregistrerChangementStatut(Demande demande, int statut) {

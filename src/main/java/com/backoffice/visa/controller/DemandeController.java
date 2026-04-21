@@ -86,6 +86,18 @@ public class DemandeController {
         return ResponseEntity.ok(pieceDemandeSpecifiqueRepository.findByDemandeId(id));
     }
 
+    @GetMapping("/verifier-passeport/{numero}")
+    public ResponseEntity<Map<String, Boolean>> verifierNumeroPasseport(@PathVariable String numero) {
+        boolean existe = demandeService.numeroPasseportDejaUtilise(numero);
+        return ResponseEntity.ok(Map.of("existe", existe));
+    }
+
+    @GetMapping("/verifier-numero-visa/{numero}")
+    public ResponseEntity<Map<String, Boolean>> verifierNumeroVisa(@PathVariable String numero) {
+        boolean existe = demandeService.numeroVisaDejaUtilise(numero);
+        return ResponseEntity.ok(Map.of("existe", existe));
+    }
+
     @GetMapping("/visa-reference/{numero}")
     public ResponseEntity<?> verifierReference(@PathVariable String numero) {
         Optional<VisaTransformable> vt = visaTransformableRepository.findByNumeroReference(numero);
