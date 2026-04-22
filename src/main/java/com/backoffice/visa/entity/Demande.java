@@ -19,7 +19,15 @@ public class Demande {
     private LocalDate dateDemande;
 
     @Column(name = "id_statut", nullable = false)
-    private Integer statut = 1; // 1=Dossier créé, 2=Dossier scanné
+    private Integer statut = 1;
+
+    // Constantes de statut
+    public static final int STATUT_CREATION = 1;
+    public static final int STATUT_TERMINE = 2;
+    public static final int STATUT_DUPLICATA_DEMANDE = 10;
+    public static final int STATUT_DUPLICATA_VALIDE = 11;
+    public static final int STATUT_DUPLICATA_REJETE = 12;
+    public static final int STATUT_DUPLICATA_EMIS = 13;
 
     @ManyToOne
     @JoinColumn(name = "id_demandeur", nullable = false)
@@ -57,9 +65,13 @@ public class Demande {
 
     public String getStatutLibelle() {
         return switch (statut) {
-            case 1 -> "Dossier créé";
-            case 2 -> "Dossier scanné";
-            default -> "Inconnu";
+            case STATUT_CREATION -> "Dossier créé";
+            case STATUT_TERMINE -> "Dossier terminé";
+            case STATUT_DUPLICATA_DEMANDE -> "Duplicata demandé";
+            case STATUT_DUPLICATA_VALIDE -> "Duplicata validé";
+            case STATUT_DUPLICATA_REJETE -> "Duplicata rejeté";
+            case STATUT_DUPLICATA_EMIS -> "Duplicata émis";
+            default -> "Inconnu (" + statut + ")";
         };
     }
 }

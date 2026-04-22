@@ -20,17 +20,19 @@ Conclusion: **dans l’état actuel, on n’obtient jamais une carte de résiden
 
 ## 2) Compréhension de la nouvelle fonctionnalité demandée
 
-Tu veux ajouter une fonctionnalité **Duplicata Carte de Résident** avec deux chemins:
+Tu veux ajouter une fonctionnalité **Duplicata Carte de Résident** avec deux cas:
 
-- **Chemin A (dossier déjà terminé)**
-  - Le demandeur existe déjà dans le système via une `Demande` “terminée”.
-  - On peut déposer une **demande de duplicata**.
-  - Si elle est **validée**, on “fait le duplicata” (i.e. on émet une nouvelle carte, ou un nouvel enregistrement).
+- **Cas 1 (avec données antérieures)**
+  - Le demandeur existe déjà dans le système (état civil, passeport, etc.).
+  - Le dossier est **accepté/terminé**.
+  - Il existe déjà une **Carte de résident**.
+  - On remplit le **formulaire de duplicata**, puis on enregistre/émet le duplicata.
 
-- **Chemin B (pas encore de données demandeur / pas de dossier existant)**
-  - On n’a pas encore les **informations personnelles** du demandeur dans la base.
-  - On doit saisir les infos **comme une demande classique** (identité, passeport, etc.).
-  - La différence: le dossier ne passe pas par “créé” seulement, il doit aller vers “terminé”, puis le duplicata continue comme le chemin A.
+- **Cas 2 (sans données antérieures)**
+  - Le demandeur n’existe pas encore en base (pas d’état civil/passeport/enregistrements).
+  - On crée **2 demandes**:
+    - Demande 1: **Transformation** (formulaire sprint 1) pour créer le demandeur + passeport + infos nécessaires, puis statut: **demande acceptée**.
+    - Demande 2: **Duplicata carte de résident** (rediriger vers formulaire de duplicata) puis enregistrer/émettre le duplicata.
 
 ## 3) Proposition de workflow cible (statuts + étapes)
 
@@ -71,9 +73,9 @@ Cas non éligibles:
 - **Agent** (back-office) : saisit/valide/scanne
 - **Système** : applique les contrôles et change les statuts
 
-## 4.1 Chemin A — Demandeur déjà connu (dossier déjà terminé)
+## 4.1 Cas 1 — Avec données antérieures
 
-### Étape A1 — Recherche du demandeur / dossier terminé
+### Étape 1 — Recherche du demandeur / dossier accepté
 
 - L’agent ouvre “Duplicata carte de résident”.
 - Il recherche par:
@@ -84,41 +86,45 @@ Cas non éligibles:
 **Résultat attendu**:
 
 - Le système retrouve:
-  - une `Demande` avec statut `TERMINE` (ou équivalent)
-  - et idéalement une `CarteResident` associée.
+  - un demandeur existant (état civil + passeport)
+  - une `Demande` d’origine **acceptée/terminée**
+  - une `CarteResident` associée
 
-### Étape A2 — Vérification d’éligibilité
+### Étape 2 — Vérification d’éligibilité
 
 Le système vérifie:
 
-- dossier `TERMINE`.
+- dossier **accepté/terminé**.
 - carte résident existe.
 
 Si KO:
 
 - afficher la raison (ex: “dossier pas terminé”, “carte introuvable”).
 
-### Étape A3 — Création de la demande de duplicata
+### Étape 3 — Formulaire de duplicata (saisie)
 
 L’agent renseigne:
 
-- motif duplicata (perte/vol/détérioration/autre)
+- motif de perte (perte/vol/détérioration/autre)
 - date de déclaration (si nécessaire)
 - référence de l’ancienne carte (si connue)
+- nouvelles dates:
+  - date de délivrance (duplicata)
+  - date d’expiration (duplicata)
 - pièces justificatives duplicata (ex: déclaration de perte, etc.)
 
 Le système crée une **demande duplicata** avec statut:
 
 - `DUPLICATA_DEMANDE`
 
-### Étape A4 — Instruction / validation
+### Étape 4 — Instruction / validation
 
 L’agent (ou un superviseur) décide:
 
 - **Valider** → statut `DUPLICATA_VALIDE`
 - **Rejeter** → statut `DUPLICATA_REJETE` + motif
 
-### Étape A5 — Émission du duplicata
+### Étape 5 — Émission / enregistrement du duplicata
 
 Si validée:
 
@@ -133,44 +139,44 @@ Statut final:
 Sorties:
 
 - nouvelle référence carte résident
-- dates (début/fin) selon règle (souvent: mêmes dates que l’ancienne carte, ou recalcul si renouvellement)
+- dates (délivrance/expiration) selon règle (cf. section 4.3)
 
-## 4.2 Chemin B — Pas de données demandeur (on crée un dossier “directement terminé”)
+## 4.2 Cas 2 — Sans données antérieures (2 demandes)
 
 ### Intention métier
 
 Tu veux pouvoir faire un duplicata même si le système n’a pas encore le demandeur. Donc on doit:
 
-1) saisir les informations (comme une demande)
-2) marquer ce dossier comme **TERMINÉ** (au lieu de passer par le workflow normal)
-3) enchaîner sur la demande duplicata
+1) créer une **Demande 1: Transformation** (sprint 1) qui enregistre état civil + passeport, puis statut: **acceptée**
+2) rediriger vers **Demande 2: Duplicata**
+3) enregistrer/émettre le duplicata
 
-### Étape B1 — Saisie “identité + passeport + contexte”
+### Étape 1 — Demande 1: Transformation (création des données)
 
-L’agent renseigne (comme `index.html` aujourd’hui):
+L’agent renseigne (formulaire transformation sprint 1):
 
 - Informations personnelles
 - Passeport
 - Référentiels (nationalité, situation)
 
-Puis, spécifiquement pour “données manquantes”:
+Puis, spécifiquement pour ce cas:
 
 - on demande la **référence / preuve** de l’ancienne carte (si dispo)
 - ou une preuve alternative (selon règles)
 
-### Étape B2 — Création d’un dossier “terminé”
+### Étape 2 — Validation: Demande transformation acceptée
 
 Le système crée:
 
 - `Demandeur`
 - `Passeport`
-- une `Demande` (ou un objet “dossier”) avec **statut = `TERMINE`**
+- une `Demande` de transformation avec statut **acceptée/terminée**
 
 But: permettre au duplicata de s’appuyer sur un dossier complet.
 
 > C’est un raccourci: tu assumes que les contrôles habituels (scan, traitement) ont été faits hors-système.
 
-### Étape B3 — Création de la carte résident “source” (si nécessaire)
+### Étape 3 — Existence de la carte résident (source)
 
 Si ta règle d’éligibilité exige qu’une carte existe déjà:
 
@@ -178,13 +184,36 @@ Si ta règle d’éligibilité exige qu’une carte existe déjà:
 
 Sinon, tu peux passer directement à B4.
 
-### Étape B4 — Enchaîner sur A3 (demande duplicata)
+### Étape 4 — Demande 2: Duplicata
 
-À partir de là, on reprend le **workflow duplicata standard**:
+À partir de là, on reprend le **workflow duplicata standard** (section 4.1):
 
+- formulaire duplicata
 - création de la demande duplicata `DUPLICATA_DEMANDE`
 - validation/rejet
 - émission
+
+## 4.3 Règles proposées pour les dates de délivrance/expiration du duplicata
+
+Le formulaire duplicata demande:
+
+- `dateDelivranceDuplicata`
+- `dateExpirationDuplicata`
+
+Proposition de logique (simple et contrôlable):
+
+1) **Date de délivrance**
+   - par défaut: `aujourd’hui`
+   - modifiable manuellement par l’agent (si besoin)
+
+2) **Date d’expiration** (2 variantes possibles)
+   - Variante V1 (recommandée pour un duplicata strict): garder la même `dateFin` que la carte d’origine
+   - Variante V2 (si vous voulez “réémettre”): recalculer une nouvelle période à partir de la date de délivrance
+
+3) **Validations**
+   - `dateExpirationDuplicata` doit être strictement > `dateDelivranceDuplicata`
+   - `dateExpirationDuplicata` ne doit pas dépasser une limite administrative (ex: +10 ans) si vous fixez une règle
+   - si V1: `dateExpirationDuplicata` est forcée à la date d’expiration de la carte d’origine
 
 ## 5) Écrans / pages (suggestion)
 

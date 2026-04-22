@@ -33,7 +33,11 @@
 
     .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
     .badge-cree { background: #d4edda; color: #155724; }
-    .badge-scanne { background: #d1ecf1; color: #0c5460; }
+    .badge-termine { background: #d1ecf1; color: #0c5460; }
+    .badge-duplicata-demande { background: #fff3cd; color: #856404; }
+    .badge-duplicata-valide { background: #cce5ff; color: #004085; }
+    .badge-duplicata-rejete { background: #f8d7da; color: #721c24; }
+    .badge-duplicata-emis { background: #d4edda; color: #155724; }
 
     .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.88em; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
     .btn-primary { background: #2980b9; color: #fff; }
@@ -65,6 +69,7 @@
   <nav>
     <a href="index.html">Nouvelle demande</a>
     <a href="demandes.html" style="opacity:1; border-bottom: 2px solid #fff; padding-bottom: 3px;">Liste des demandes</a>
+    <a href="duplicata.html">Duplicata</a>
   </nav>
 </div>
 
@@ -81,8 +86,8 @@
       <div class="label">Dossiers créés</div>
     </div>
     <div class="stat-card">
-      <div class="number" id="stat-scanne" style="color:#2980b9;">0</div>
-      <div class="label">Dossiers scannés</div>
+      <div class="number" id="stat-termine" style="color:#2980b9;">0</div>
+      <div class="label">Dossiers terminés</div>
     </div>
   </div>
 
@@ -94,7 +99,11 @@
       <select id="filter-statut" onchange="filtrerDemandes()">
         <option value="">Tous les statuts</option>
         <option value="1">Dossier créé</option>
-        <option value="2">Dossier scanné</option>
+        <option value="2">Dossier terminé</option>
+        <option value="10">Duplicata demandé</option>
+        <option value="11">Duplicata validé</option>
+        <option value="12">Duplicata rejeté</option>
+        <option value="13">Duplicata émis</option>
       </select>
       <select id="filter-type-demande" onchange="filtrerDemandes()">
         <option value="">Tous les types de demande</option>
@@ -161,11 +170,23 @@
       // Stats
       document.getElementById('stat-total').textContent = allDemandes.length;
       document.getElementById('stat-cree').textContent = allDemandes.filter(d => d.statut === 1).length;
-      document.getElementById('stat-scanne').textContent = allDemandes.filter(d => d.statut === 2).length;
+      document.getElementById('stat-termine').textContent = allDemandes.filter(d => d.statut === 2).length;
 
       afficherDemandes(allDemandes);
     } catch (e) {
       showAlert('Erreur lors du chargement des demandes', 'error');
+    }
+  }
+
+  function getBadgeClass(statut) {
+    switch(statut) {
+      case 1: return 'badge-cree';
+      case 2: return 'badge-termine';
+      case 10: return 'badge-duplicata-demande';
+      case 11: return 'badge-duplicata-valide';
+      case 12: return 'badge-duplicata-rejete';
+      case 13: return 'badge-duplicata-emis';
+      default: return '';
     }
   }
 
@@ -180,20 +201,61 @@
     }
     emptyMsg.style.display = 'none';
 
-    tbody.innerHTML = demandes.map(d => `
-      <tr onclick="voirDetail(${d.id})">
-        <td><strong>#${d.id}</strong></td>
-        <td>${d.demandeur ? d.demandeur.nom + ' ' + d.demandeur.prenom : '-'}</td>
-        <td>${d.typeDemande ? d.typeDemande.libelle : '-'}</td>
-        <td>${d.typeVisa ? d.typeVisa.libelle : '-'}</td>
-        <td>${d.dateDemande || '-'}</td>
-        <td><span class="badge ${d.statut === 1 ? 'badge-cree' : 'badge-scanne'}">${d.statut === 1 ? 'Dossier créé' : 'Dossier scanné'}</span></td>
-        <td>
-          <a class="btn btn-outline btn-sm" onclick="event.stopPropagation(); voirDetail(${d.id})">Voir</a>
-          ${d.statut === 1 ? '<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); scannerDossier(' + d.id + ')">Scanner</button>' : ''}
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = demandes.map(d => {
+      let actions = `<a class="btn btn-outline btn-sm" onclick="event.stopPropagation(); voirDetail(${d.id})">Voir</a> `;
+      
+      if (d.statut === 1) {
+        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); terminerDossier(${d.id})">Terminer</button>`;
+      } else if (d.statut === 10) {
+        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); validerDuplicata(${d.id})">Valider</button> `;
+        actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterDuplicata(${d.id})">Rejeter</button>`;
+      } else if (d.statut === 11) {
+        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreDuplicata(${d.id})">Émettre Carte</button>`;
+      }
+
+      return `
+        <tr onclick="voirDetail(${d.id})">
+          <td><strong>#${d.id}</strong></td>
+          <td>${d.demandeur ? d.demandeur.nom + ' ' + d.demandeur.prenom : '-'}</td>
+          <td>${d.typeDemande ? d.typeDemande.libelle : '-'}</td>
+          <td>${d.typeVisa ? d.typeVisa.libelle : '-'}</td>
+          <td>${d.dateDemande || '-'}</td>
+          <td><span class="badge ${getBadgeClass(d.statut)}">${d.statutLibelle}</span></td>
+          <td>${actions}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  async function validerDuplicata(id) {
+    if (!confirm('Valider cette demande de duplicata ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/duplicata/${id}/valider`, { method: 'PUT' });
+      if (!res.ok) throw new Error('Erreur lors de la validation');
+      showAlert('Demande de duplicata validée', 'success');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
+  }
+
+  async function rejeterDuplicata(id) {
+    if (!confirm('Rejeter cette demande de duplicata ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/duplicata/${id}/rejeter`, { method: 'PUT' });
+      if (!res.ok) throw new Error('Erreur lors du rejet');
+      showAlert('Demande de duplicata rejetée', 'success');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
+  }
+
+  async function emettreDuplicata(id) {
+    if (!confirm('Émettre la nouvelle carte de résident (duplicata) ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/duplicata/${id}/emettre`, { method: 'PUT' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'émission');
+      showAlert('Duplicata émis avec succès : ' + data.reference, 'success');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
   }
 
   function filtrerDemandes() {
@@ -217,13 +279,13 @@
     window.location.href = 'detail.html?id=' + id;
   }
 
-  async function scannerDossier(id) {
-    if (!confirm('Confirmer le scan du dossier #' + id + ' ? Cette action est irréversible.')) return;
+  async function terminerDossier(id) {
+    if (!confirm('Confirmer ? Le dossier #' + id + ' sera terminé et la carte résident sera générée. Cette action est irréversible.')) return;
     try {
-      const res = await fetch('/api/demandes/' + id + '/scanner', { method: 'PUT' });
+      const res = await fetch('/api/demandes/' + id + '/terminer', { method: 'PUT' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur');
-      showAlert('Dossier #' + id + ' scanné avec succès', 'success');
+      showAlert('Dossier #' + id + ' terminé avec succès', 'success');
       chargerDemandes();
     } catch (e) {
       showAlert(e.message, 'error');

@@ -48,14 +48,24 @@ public class DemandeController {
         }
     }
 
-    @PutMapping("/{id}/scanner")
-    public ResponseEntity<?> scannerDossier(@PathVariable Long id) {
+    @PostMapping("/termines")
+    public ResponseEntity<?> creerDossierTermine(@RequestBody DemandeFormDTO form) {
         try {
-            Demande demande = demandeService.scannerDossier(id);
+            Demande demande = demandeService.creerDossierTermine(form);
+            return ResponseEntity.ok(demande);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/terminer")
+    public ResponseEntity<?> terminerDossier(@PathVariable Long id) {
+        try {
+            Demande demande = demandeService.terminerDossier(id);
             Map<String, Object> response = new HashMap<>();
             response.put("id", demande.getId());
             response.put("statut", demande.getStatutLibelle());
-            response.put("message", "Dossier scanné — le dossier ne peut plus être modifié");
+            response.put("message", "Dossier terminé — Carte de résident générée.");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

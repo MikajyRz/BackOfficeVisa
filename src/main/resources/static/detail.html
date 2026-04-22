@@ -27,7 +27,7 @@
 
     .badge { display: inline-block; padding: 6px 16px; border-radius: 14px; font-size: 0.85em; font-weight: 600; }
     .badge-cree { background: #d4edda; color: #155724; }
-    .badge-scanne { background: #d1ecf1; color: #0c5460; }
+    .badge-termine { background: #d1ecf1; color: #0c5460; }
 
     .btn { padding: 10px 22px; border: none; border-radius: 6px; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
     .btn-primary { background: #2980b9; color: #fff; }
@@ -169,8 +169,8 @@
 
       // Statut
       const badgeEl = document.getElementById('badge-statut');
-      badgeEl.textContent = d.statut === 1 ? 'Dossier créé' : 'Dossier scanné';
-      badgeEl.className = 'badge ' + (d.statut === 1 ? 'badge-cree' : 'badge-scanne');
+      badgeEl.textContent = d.statut === 1 ? 'Dossier créé' : 'Dossier terminé';
+      badgeEl.className = 'badge ' + (d.statut === 1 ? 'badge-cree' : 'badge-termine');
       document.getElementById('date-demande').textContent = d.dateDemande || '-';
       document.getElementById('date-traitement').textContent = d.dateTraitement || '-';
 
@@ -178,7 +178,7 @@
       const actionsDiv = document.getElementById('action-buttons');
       let actionsHtml = '<a class="btn btn-secondary" href="demandes.html">← Retour</a> ';
       if (d.statut === 1) {
-        actionsHtml += '<button class="btn btn-success" onclick="scannerDossier()">Scanner le dossier</button>';
+        actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
       }
       actionsDiv.innerHTML = actionsHtml;
 
@@ -243,13 +243,13 @@
     }
   }
 
-  async function scannerDossier() {
-    if (!confirm('Confirmer le scan du dossier ? Cette action est irréversible.')) return;
+  async function terminerDossier() {
+    if (!confirm('Confirmer ? Le dossier sera terminé et la carte résident sera générée. Cette action est irréversible.')) return;
     try {
-      const res = await fetch('/api/demandes/' + demandeId + '/scanner', { method: 'PUT' });
+      const res = await fetch('/api/demandes/' + demandeId + '/terminer', { method: 'PUT' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur');
-      showAlert('Dossier scanné avec succès', 'success');
+      showAlert('Dossier terminé avec succès', 'success');
       chargerDetail();
     } catch (e) {
       showAlert(e.message, 'error');
