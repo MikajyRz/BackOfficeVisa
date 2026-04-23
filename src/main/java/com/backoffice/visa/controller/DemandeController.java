@@ -58,18 +58,37 @@ public class DemandeController {
         }
     }
 
-    @PutMapping("/{id}/terminer")
-    public ResponseEntity<?> terminerDossier(@PathVariable Long id) {
+    @PutMapping("/{id}/scanner")
+    public ResponseEntity<?> scannerDossier(@PathVariable Long id) {
         try {
-            Demande demande = demandeService.terminerDossier(id);
+            Demande demande = demandeService.scannerDossier(id);
             Map<String, Object> response = new HashMap<>();
             response.put("id", demande.getId());
             response.put("statut", demande.getStatutLibelle());
-            response.put("message", "Dossier terminé — Carte de résident générée.");
+            response.put("message", "Dossier scanné avec succès.");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PutMapping("/{id}/approuver")
+    public ResponseEntity<?> approuverDossier(@PathVariable Long id) {
+        try {
+            Demande demande = demandeService.approuverDossier(id);
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", demande.getId());
+            response.put("statut", demande.getStatutLibelle());
+            response.put("message", "Dossier approuvé — Carte de résident générée.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/terminer")
+    public ResponseEntity<?> terminerDossier(@PathVariable Long id) {
+        return approuverDossier(id);
     }
 
     @GetMapping
@@ -121,6 +140,34 @@ public class DemandeController {
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.ok(Map.of("existe", false));
+        }
+    }
+
+    @GetMapping("/transfert/recherche/{numero}")
+    public ResponseEntity<?> rechercherReferenceTransfert(@PathVariable String numero) {
+        return ResponseEntity.ok(demandeService.rechercherReferenceTransfert(numero));
+    }
+
+    @PostMapping("/transfert")
+    public ResponseEntity<?> creerTransfert(@RequestBody DemandeFormDTO form) {
+        try {
+            Map<String, Object> recherche = demandeService.rechercherReferenceTransfert(form.getNumeroReferenceVisa());
+            boolean referenceExiste = Boolean.TRUE.equals(recherche.get("existe"));
+
+            Demande demande = referenceExiste
+                    ? demandeService.creerTransfertDepuisReference(form)
+                    : demandeService.creerTransfertSansReference(form);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", demande.getId());
+            response.put("statut", demande.getStatutLibelle());
+            response.put("referenceTrouvee", referenceExiste);
+            response.put("message", referenceExiste
+                    ? "Transfert créé depuis une référence existante"
+                    : "Transfert créé et automatiquement approuvé (référence absente)");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

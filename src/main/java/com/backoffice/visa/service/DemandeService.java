@@ -6,8 +6,11 @@ import com.backoffice.visa.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class DemandeService {
@@ -174,31 +177,31 @@ public class DemandeService {
             pieceDemandeSpecifiqueRepository.save(piece);
         }
 
-        // 7. Vérifier que toutes les pièces obligatoires sont fournies → "Dossier créé"
+        // 7. Déterminer le statut selon la complétude des pièces obligatoires
         boolean toutesObligatoiresFournies = verifierPiecesObligatoires(demande.getId());
-        if (!toutesObligatoiresFournies) {
-            throw new RuntimeException("Toutes les pièces obligatoires doivent être fournies pour créer le dossier");
-        }
-
-        // Statut = Dossier créé (1)
-        enregistrerChangementStatut(demande, 1);
+        int statutFinal = toutesObligatoiresFournies ? Demande.STATUT_CREATION : Demande.STATUT_INCOMPLET;
+        demande.setStatut(statutFinal);
+        demande = demandeRepository.save(demande);
+        enregistrerChangementStatut(demande, statutFinal);
 
         return demande;
     }
 
     /**
-     * Vérifie si toutes les pièces obligatoires (communes + spécifiques) sont fournies
+     * Vérifie si toutes les pièces (obligatoires ET facultatives) sont fournies.
+     * → TRUE  = toutes présentes → "Dossier créé"
+     * → FALSE = au moins une manquante → "Dossier"
      */
     private boolean verifierPiecesObligatoires(Long demandeId) {
         List<PieceDemande> piecesCommunes = pieceDemandeRepository.findByDemandeId(demandeId);
         for (PieceDemande p : piecesCommunes) {
-            if (p.getTypePieceCommune().getObligatoire() && !p.getPresente()) {
+            if (!p.getPresente()) {
                 return false;
             }
         }
         List<PieceDemandeSpecifique> piecesSpec = pieceDemandeSpecifiqueRepository.findByDemandeId(demandeId);
         for (PieceDemandeSpecifique p : piecesSpec) {
-            if (p.getTypePieceSpecifique().getObligatoire() && !p.getPresente()) {
+            if (!p.getPresente()) {
                 return false;
             }
         }
@@ -206,22 +209,38 @@ public class DemandeService {
     }
 
     /**
-     * Terminer le dossier (passe de "Dossier créé" à "Dossier terminé")
-     * Le dossier ne peut plus être modifié.
-     * Crée automatiquement la carte de résident.
+     * Scanner le dossier (passe de "Dossier créé" à "Dossier scanné").
      */
     @Transactional
-    public Demande terminerDossier(Long demandeId) {
+    public Demande scannerDossier(Long demandeId) {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
-        if (demande.getStatut() != 1) {
-            throw new RuntimeException("Seul un dossier créé peut être terminé. Statut actuel : " + demande.getStatutLibelle());
+        if (demande.getStatut() != Demande.STATUT_CREATION) {
+            throw new RuntimeException("Seul un dossier créé peut être scanné. Statut actuel : " + demande.getStatutLibelle());
         }
 
-        demande.setStatut(2); // Dossier terminé
+        demande.setStatut(Demande.STATUT_SCANNE);
+        enregistrerChangementStatut(demande, Demande.STATUT_SCANNE);
+        return demandeRepository.save(demande);
+    }
+
+    /**
+     * Approuver le dossier (passe de "Dossier scanné" à "Dossier approuvé").
+     * Crée automatiquement la carte de résident.
+     */
+    @Transactional
+    public Demande approuverDossier(Long demandeId) {
+        Demande demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new RuntimeException("Demande introuvable"));
+
+        if (demande.getStatut() != Demande.STATUT_SCANNE) {
+            throw new RuntimeException("Seul un dossier scanné peut être approuvé. Statut actuel : " + demande.getStatutLibelle());
+        }
+
+        demande.setStatut(Demande.STATUT_APPROUVE);
         demande.setDateTraitement(LocalDate.now());
-        enregistrerChangementStatut(demande, 2);
+        enregistrerChangementStatut(demande, Demande.STATUT_APPROUVE);
         demande = demandeRepository.save(demande);
 
         // Créer automatiquement la carte de résident
@@ -279,15 +298,132 @@ public class DemandeService {
     }
 
     /**
-     * Créer une demande déjà terminée (pour le cas de duplicata sans données antérieures)
+     * Créer une demande déjà approuvée (cas sans données antérieures)
      */
     @Transactional
     public Demande creerDossierTermine(DemandeFormDTO form) {
-        // On réutilise la création de base
         Demande demande = creerDemande(form);
-        
-        // On la termine immédiatement
-        return terminerDossier(demande.getId());
+
+        if (demande.estDossierIncomplet()) {
+            throw new RuntimeException("Toutes les pièces obligatoires doivent être fournies pour finaliser le dossier");
+        }
+
+        demande = scannerDossier(demande.getId());
+        return approuverDossier(demande.getId());
+    }
+
+    public Map<String, Object> rechercherReferenceTransfert(String numeroReference) {
+        String numeroNormalise = normaliserNumero(numeroReference);
+        Optional<VisaTransformable> optionalVisa = visaTransformableRepository.findByNumeroReference(numeroNormalise);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("existe", optionalVisa.isPresent());
+        if (optionalVisa.isEmpty()) {
+            return response;
+        }
+
+        VisaTransformable visa = optionalVisa.get();
+        Demandeur demandeur = visa.getDemandeur();
+        Passeport passeport = visa.getPasseport();
+
+        response.put("numeroReferenceVisa", visa.getNumeroReference());
+        response.put("lieuVisa", visa.getLieu());
+        response.put("dateDebutVisa", visa.getDateDebut());
+        response.put("dateFinVisa", visa.getDateFin());
+
+        if (demandeur != null) {
+            response.put("nom", demandeur.getNom());
+            response.put("prenom", demandeur.getPrenom());
+            response.put("dateNaissance", demandeur.getDateNaissance());
+            response.put("lieuNaissance", demandeur.getLieuNaissance());
+            response.put("telephone", demandeur.getTelephone());
+            response.put("email", demandeur.getEmail());
+            response.put("adresse", demandeur.getAdresse());
+            response.put("idNationalite", demandeur.getNationalite() != null ? demandeur.getNationalite().getId() : null);
+            response.put("idSituationFamiliale", demandeur.getSituationFamiliale() != null ? demandeur.getSituationFamiliale().getId() : null);
+        }
+
+        if (passeport != null) {
+            response.put("numeroPasseport", passeport.getNumeroPasseport());
+            response.put("dateDelivrancePasseport", passeport.getDateDelivrance());
+            response.put("dateExpirationPasseport", passeport.getDateExpiration());
+            response.put("paysDelivrance", passeport.getPaysDelivrance());
+        }
+
+        demandeRepository.findTopByVisaTransformableIdOrderByDateDemandeDesc(visa.getId())
+                .ifPresent(d -> {
+                    response.put("idTypeVisa", d.getTypeVisa() != null ? d.getTypeVisa().getId() : null);
+                    response.put("idTypeDemande", d.getTypeDemande() != null ? d.getTypeDemande().getId() : null);
+                });
+
+        return response;
+    }
+
+    @Transactional
+    public Demande creerTransfertDepuisReference(DemandeFormDTO form) {
+        String numeroNormalise = normaliserNumero(form.getNumeroReferenceVisa());
+        VisaTransformable visa = visaTransformableRepository.findByNumeroReference(numeroNormalise)
+                .orElseThrow(() -> new RuntimeException("Référence visa introuvable"));
+
+        if (form.getIdTypeVisa() == null) {
+            throw new RuntimeException("Le type de visa est obligatoire");
+        }
+
+        TypeVisa typeVisa = typeVisaRepository.findById(form.getIdTypeVisa())
+                .orElseThrow(() -> new RuntimeException("Type de visa introuvable"));
+
+        TypeDemande typeDemandeTransfert = typeDemandeRepository.findByLibelleIgnoreCase("Transfert de visa")
+                .orElseThrow(() -> new RuntimeException("Type de demande 'Transfert de visa' introuvable"));
+
+        Demande demande = new Demande();
+        demande.setDemandeur(visa.getDemandeur());
+        demande.setTypeVisa(typeVisa);
+        demande.setTypeDemande(typeDemandeTransfert);
+        demande.setDateDemande(LocalDate.now());
+        demande.setStatut(Demande.STATUT_CREATION);
+        demande.setVisaTransformable(visa);
+        demande = demandeRepository.save(demande);
+
+        enregistrerPieces(demande, form);
+
+        boolean toutesObligatoiresFournies = verifierPiecesObligatoires(demande.getId());
+        int statutFinalTransfert = toutesObligatoiresFournies ? Demande.STATUT_CREATION : Demande.STATUT_INCOMPLET;
+        demande.setStatut(statutFinalTransfert);
+        demande = demandeRepository.save(demande);
+        enregistrerChangementStatut(demande, statutFinalTransfert);
+        return demande;
+    }
+
+    @Transactional
+    public Demande creerTransfertSansReference(DemandeFormDTO form) {
+        TypeDemande typeDemandeTransfert = typeDemandeRepository.findByLibelleIgnoreCase("Transfert de visa")
+                .orElseThrow(() -> new RuntimeException("Type de demande 'Transfert de visa' introuvable"));
+        form.setIdTypeDemande(typeDemandeTransfert.getId());
+        return creerDossierTermine(form);
+    }
+
+    private void enregistrerPieces(Demande demande, DemandeFormDTO form) {
+        List<TypePieceCommune> toutesCommunes = typePieceCommuneRepository.findAll();
+        for (TypePieceCommune type : toutesCommunes) {
+            PieceDemande piece = new PieceDemande();
+            piece.setDemande(demande);
+            piece.setTypePieceCommune(type);
+            boolean presente = form.getPiecesCommunesPresentes() != null
+                    && form.getPiecesCommunesPresentes().contains(type.getId());
+            piece.setPresente(presente);
+            pieceDemandeRepository.save(piece);
+        }
+
+        List<TypePieceSpecifique> specifiques = typePieceSpecifiqueRepository.findByTypeVisaId(form.getIdTypeVisa());
+        for (TypePieceSpecifique type : specifiques) {
+            PieceDemandeSpecifique piece = new PieceDemandeSpecifique();
+            piece.setDemande(demande);
+            piece.setTypePieceSpecifique(type);
+            boolean presente = form.getPiecesSpecifiquesPresentes() != null
+                    && form.getPiecesSpecifiquesPresentes().contains(type.getId());
+            piece.setPresente(presente);
+            pieceDemandeSpecifiqueRepository.save(piece);
+        }
     }
 
     private String normaliserNumero(String numero) {

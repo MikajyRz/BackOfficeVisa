@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transfert de Visa — Back Office Visa</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .container { max-width: 980px; margin: 28px auto; padding: 0 24px; }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div class="header-brand">
+    <div class="logo-icon">🔄</div>
+    <h1>Back Office Visa<small>Madagascar</small></h1>
+  </div>
+  <nav>
+    <a href="index.html">✚ Nouvelle demande</a>
+    <a href="demandes.html">📋 Demandes</a>
+    <a href="duplicata.html">📄 Duplicata</a>
+    <a href="transfert.html" class="active">🔄 Transfert</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div id="alert" class="alert"></div>
+
+  <div class="card">
+    <h2>🔍 Recherche de la référence de visa</h2>
+    <p class="page-hint">Si la référence existe, le formulaire est prérempli. Sinon, vous continuez comme un nouveau titre avec dossier automatiquement approuvé.</p>
+    <div class="search-row">
+      <input type="text" id="searchReference" placeholder="Numéro de référence du visa" />
+      <button class="btn btn-primary" onclick="rechercherReference()">Rechercher</button>
+    </div>
+    <div id="search-status" class="status-note"></div>
+  </div>
+
+  <div class="card">
+    <h2>📝 Formulaire de transfert</h2>
+
+    <h3>👤 Identité</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Nom <span class="req">*</span></label><input id="nom" /></div>
+      <div class="form-group"><label>Prénom <span class="req">*</span></label><input id="prenom" /></div>
+      <div class="form-group"><label>Date de naissance <span class="req">*</span></label><input id="dateNaissance" type="date" /></div>
+      <div class="form-group"><label>Lieu de naissance <span class="req">*</span></label><input id="lieuNaissance" /></div>
+      <div class="form-group"><label>Nationalité <span class="req">*</span></label><select id="idNationalite"><option value="">-- Choisir --</option></select></div>
+      <div class="form-group"><label>Situation familiale <span class="req">*</span></label><select id="idSituationFamiliale"><option value="">-- Choisir --</option></select></div>
+      <div class="form-group"><label>Téléphone <span class="req">*</span></label><input id="telephone" /></div>
+      <div class="form-group"><label>Email <span class="req">*</span></label><input id="email" type="email" /></div>
+      <div class="form-group full"><label>Adresse <span class="req">*</span></label><textarea id="adresse" rows="2"></textarea></div>
+    </div>
+
+    <hr class="divider" />
+    <h3>🛂 Passeport</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Numéro passeport <span class="req">*</span></label><input id="numeroPasseport" /></div>
+      <div class="form-group"><label>Pays de délivrance <span class="req">*</span></label><input id="paysDelivrance" /></div>
+      <div class="form-group"><label>Date délivrance passeport <span class="req">*</span></label><input id="dateDelivrancePasseport" type="date" /></div>
+      <div class="form-group"><label>Date expiration passeport <span class="req">*</span></label><input id="dateExpirationPasseport" type="date" /></div>
+    </div>
+
+    <hr class="divider" />
+    <h3>🪪 Visa</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Type de visa <span class="req">*</span></label><select id="idTypeVisa" onchange="chargerPiecesSpecifiques()"><option value="">-- Choisir --</option></select></div>
+      <div class="form-group"><label>Type de demande</label><input value="Transfert de visa" disabled /></div>
+      <div class="form-group full"><label>Référence visa <span class="req">*</span></label><input id="numeroReferenceVisa" /></div>
+      <div class="form-group"><label>Lieu visa <span class="req">*</span></label><input id="lieuVisa" /></div>
+      <div class="form-group"><label>Date début visa <span class="req">*</span></label><input id="dateDebutVisa" type="date" /></div>
+      <div class="form-group"><label>Date fin visa <span class="req">*</span></label><input id="dateFinVisa" type="date" /></div>
+    </div>
+
+    <h3>📄 Pièces communes</h3>
+    <div id="pieces-communes" class="pieces"></div>
+
+    <h3 id="title-pieces-spec" style="display:none;">📄 Pièces spécifiques</h3>
+    <div id="pieces-specifiques" class="pieces"></div>
+
+    <div class="btn-row">
+      <a href="index.html" class="btn btn-secondary">Annuler</a>
+      <button class="btn btn-success" onclick="soumettreTransfert()">✔ Enregistrer le transfert</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '';
+  const refData = { piecesSpecifiques: [] };
+  let referenceTrouvee = false;
+
+  function remplirSelect(id, items) {
+    const sel = document.getElementById(id);
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.libelle;
+      sel.appendChild(opt);
+    });
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.className = 'alert alert-' + type;
+    el.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function hideAlert() {
+    document.getElementById('alert').style.display = 'none';
+  }
+
+  function setField(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = value == null ? '' : value;
+  }
+
+  async function chargerReferences() {
+    try {
+      const [natRes, sitRes, tvRes, pcRes] = await Promise.all([
+        fetch(API + '/api/references/nationalites'),
+        fetch(API + '/api/references/situations-familiales'),
+        fetch(API + '/api/references/types-visa'),
+        fetch(API + '/api/references/pieces-communes')
+      ]);
+      refData.nationalites = await natRes.json();
+      refData.situations = await sitRes.json();
+      refData.typesVisa = await tvRes.json();
+      refData.piecesCommunes = await pcRes.json();
+
+      remplirSelect('idNationalite', refData.nationalites);
+      remplirSelect('idSituationFamiliale', refData.situations);
+      remplirSelect('idTypeVisa', refData.typesVisa);
+      afficherPiecesCommunes();
+    } catch (e) {
+      showAlert('Erreur lors du chargement des références', 'error');
+    }
+  }
+
+  function afficherPiecesCommunes() {
+    const container = document.getElementById('pieces-communes');
+    container.innerHTML = '';
+    refData.piecesCommunes.forEach(p => {
+      container.innerHTML += '<div class="piece-item">'
+        + '<input type="checkbox" id="pc-' + p.id + '" value="' + p.id + '" />'
+        + '<label for="pc-' + p.id + '">' + p.libelle + (p.obligatoire ? ' (obligatoire)' : '') + '</label>'
+        + '</div>';
+    });
+  }
+
+  async function chargerPiecesSpecifiques() {
+    const typeVisaId = document.getElementById('idTypeVisa').value;
+    const container = document.getElementById('pieces-specifiques');
+    const title = document.getElementById('title-pieces-spec');
+    container.innerHTML = '';
+    if (!typeVisaId) {
+      title.style.display = 'none';
+      refData.piecesSpecifiques = [];
+      return;
+    }
+
+    const res = await fetch(API + '/api/references/pieces-specifiques/' + typeVisaId);
+    refData.piecesSpecifiques = await res.json();
+    if (refData.piecesSpecifiques.length === 0) {
+      title.style.display = 'none';
+      return;
+    }
+
+    title.style.display = 'block';
+    refData.piecesSpecifiques.forEach(p => {
+      container.innerHTML += '<div class="piece-item">'
+        + '<input type="checkbox" id="ps-' + p.id + '" value="' + p.id + '" />'
+        + '<label for="ps-' + p.id + '">' + p.libelle + (p.obligatoire ? ' (obligatoire)' : '') + '</label>'
+        + '</div>';
+    });
+  }
+
+  async function rechercherReference() {
+    hideAlert();
+    const reference = document.getElementById('searchReference').value.trim();
+    if (!reference) {
+      showAlert('Veuillez saisir une référence.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(API + '/api/demandes/transfert/recherche/' + encodeURIComponent(reference));
+      const data = await res.json();
+      const status = document.getElementById('search-status');
+
+      referenceTrouvee = data.existe === true;
+      status.style.display = 'block';
+
+      if (referenceTrouvee) {
+        status.className = 'status-note status-found';
+        status.textContent = 'Référence trouvée. Le formulaire est prérempli.';
+
+        setField('nom', data.nom);
+        setField('prenom', data.prenom);
+        setField('dateNaissance', data.dateNaissance);
+        setField('lieuNaissance', data.lieuNaissance);
+        setField('telephone', data.telephone);
+        setField('email', data.email);
+        setField('adresse', data.adresse);
+        setField('idNationalite', data.idNationalite);
+        setField('idSituationFamiliale', data.idSituationFamiliale);
+        setField('numeroPasseport', data.numeroPasseport);
+        setField('dateDelivrancePasseport', data.dateDelivrancePasseport);
+        setField('dateExpirationPasseport', data.dateExpirationPasseport);
+        setField('paysDelivrance', data.paysDelivrance);
+        setField('idTypeVisa', data.idTypeVisa);
+        setField('numeroReferenceVisa', data.numeroReferenceVisa);
+        setField('lieuVisa', data.lieuVisa);
+        setField('dateDebutVisa', data.dateDebutVisa);
+        setField('dateFinVisa', data.dateFinVisa);
+
+        await chargerPiecesSpecifiques();
+      } else {
+        status.className = 'status-note status-miss';
+        status.textContent = 'Référence introuvable. Vous pouvez continuer comme un nouveau titre, le dossier sera automatiquement terminé.';
+        setField('numeroReferenceVisa', reference);
+      }
+    } catch (e) {
+      showAlert('Erreur pendant la recherche de référence.', 'error');
+    }
+  }
+
+  function collectChecked(prefix, list) {
+    const ids = [];
+    list.forEach(p => {
+      const el = document.getElementById(prefix + p.id);
+      if (el && el.checked) {
+        ids.push(p.id);
+      }
+    });
+    return ids;
+  }
+
+  function validateBasic() {
+    const required = [
+      'idTypeVisa', 'numeroReferenceVisa', 'lieuVisa', 'dateDebutVisa', 'dateFinVisa',
+      'nom', 'prenom', 'dateNaissance', 'lieuNaissance', 'telephone', 'email', 'adresse',
+      'idNationalite', 'idSituationFamiliale', 'numeroPasseport', 'dateDelivrancePasseport',
+      'dateExpirationPasseport', 'paysDelivrance'
+    ];
+
+    for (const id of required) {
+      const el = document.getElementById(id);
+      if (!el || !String(el.value || '').trim()) {
+        showAlert('Veuillez remplir le champ: ' + id, 'error');
+        return false;
+      }
+    }
+
+    const ddp = document.getElementById('dateDelivrancePasseport').value;
+    const dep = document.getElementById('dateExpirationPasseport').value;
+    if (dep <= ddp) {
+      showAlert('La date expiration du passeport doit être supérieure à la date de délivrance.', 'error');
+      return false;
+    }
+
+    const ddv = document.getElementById('dateDebutVisa').value;
+    const dfv = document.getElementById('dateFinVisa').value;
+    if (ddv > dfv) {
+      showAlert('La date de début du visa doit être antérieure ou égale à la date de fin.', 'error');
+      return false;
+    }
+
+    return true;
+  }
+
+  async function soumettreTransfert() {
+    hideAlert();
+    if (!validateBasic()) {
+      return;
+    }
+
+    const body = {
+      nom: document.getElementById('nom').value,
+      prenom: document.getElementById('prenom').value,
+      dateNaissance: document.getElementById('dateNaissance').value,
+      lieuNaissance: document.getElementById('lieuNaissance').value,
+      telephone: document.getElementById('telephone').value,
+      email: document.getElementById('email').value,
+      adresse: document.getElementById('adresse').value,
+      idNationalite: parseInt(document.getElementById('idNationalite').value),
+      idSituationFamiliale: parseInt(document.getElementById('idSituationFamiliale').value),
+      numeroPasseport: document.getElementById('numeroPasseport').value,
+      dateDelivrancePasseport: document.getElementById('dateDelivrancePasseport').value,
+      dateExpirationPasseport: document.getElementById('dateExpirationPasseport').value,
+      paysDelivrance: document.getElementById('paysDelivrance').value,
+      idTypeVisa: parseInt(document.getElementById('idTypeVisa').value),
+      numeroReferenceVisa: document.getElementById('numeroReferenceVisa').value,
+      lieuVisa: document.getElementById('lieuVisa').value,
+      dateDebutVisa: document.getElementById('dateDebutVisa').value,
+      dateFinVisa: document.getElementById('dateFinVisa').value,
+      piecesCommunesPresentes: collectChecked('pc-', refData.piecesCommunes),
+      piecesSpecifiquesPresentes: collectChecked('ps-', refData.piecesSpecifiques)
+    };
+
+    try {
+      const res = await fetch(API + '/api/demandes/transfert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur lors de la création du transfert');
+      }
+
+      const msg = referenceTrouvee
+        ? 'Transfert créé avec succès. Dossier #' + data.id + ' (' + data.statut + ').'
+        : 'Transfert créé avec succès en mode dossier déjà approuvé. Dossier #' + data.id + ' (' + data.statut + ').';
+      showAlert(msg, 'success');
+    } catch (e) {
+      showAlert(e.message, 'error');
+    }
+  }
+
+  chargerReferences();
+</script>
+</body>
+</html>

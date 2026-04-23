@@ -22,8 +22,10 @@ public class Demande {
     private Integer statut = 1;
 
     // Constantes de statut
+    public static final int STATUT_INCOMPLET = 0;
     public static final int STATUT_CREATION = 1;
-    public static final int STATUT_TERMINE = 2;
+    public static final int STATUT_SCANNE = 2;
+    public static final int STATUT_APPROUVE = 3;
     public static final int STATUT_DUPLICATA_DEMANDE = 10;
     public static final int STATUT_DUPLICATA_VALIDE = 11;
     public static final int STATUT_DUPLICATA_REJETE = 12;
@@ -65,13 +67,23 @@ public class Demande {
 
     public String getStatutLibelle() {
         return switch (statut) {
+            case STATUT_INCOMPLET -> "Dossier";
             case STATUT_CREATION -> "Dossier créé";
-            case STATUT_TERMINE -> "Dossier terminé";
+            case STATUT_SCANNE -> "Dossier scanné";
+            case STATUT_APPROUVE -> "Dossier approuvé";
             case STATUT_DUPLICATA_DEMANDE -> "Duplicata demandé";
             case STATUT_DUPLICATA_VALIDE -> "Duplicata validé";
             case STATUT_DUPLICATA_REJETE -> "Duplicata rejeté";
             case STATUT_DUPLICATA_EMIS -> "Duplicata émis";
             default -> "Inconnu (" + statut + ")";
         };
+    }
+
+    public boolean estDossierApprouve() {
+        return statut != null && statut == STATUT_APPROUVE;
+    }
+
+    public boolean estDossierIncomplet() {
+        return statut != null && statut == STATUT_INCOMPLET;
     }
 }

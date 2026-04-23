@@ -43,13 +43,13 @@ public class DuplicataService {
         try {
             Long id = Long.parseLong(critere);
             return demandeRepository.findById(id)
-                    .filter(d -> d.getStatut() == Demande.STATUT_TERMINE);
+                    .filter(Demande::estDossierApprouve);
         } catch (NumberFormatException e) {
             // Tentative par référence de carte
             return carteResidentRepository.findAll().stream()
                     .filter(c -> critere.equalsIgnoreCase(c.getReference()))
                     .map(CarteResident::getDemande)
-                    .filter(d -> d.getStatut() == Demande.STATUT_TERMINE)
+                    .filter(Demande::estDossierApprouve)
                     .findFirst();
         }
     }
@@ -62,8 +62,8 @@ public class DuplicataService {
         Demande demandeOrigine = demandeRepository.findById(form.getIdDemandeOrigine())
                 .orElseThrow(() -> new RuntimeException("Demande d'origine introuvable"));
 
-        if (demandeOrigine.getStatut() != Demande.STATUT_TERMINE) {
-            throw new RuntimeException("La demande d'origine doit être terminée");
+        if (!demandeOrigine.estDossierApprouve()) {
+            throw new RuntimeException("La demande d'origine doit être approuvée");
         }
 
         CarteResident carteOrigine = carteResidentRepository.findByDemandeId(demandeOrigine.getId())

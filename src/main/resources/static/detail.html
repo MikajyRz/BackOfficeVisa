@@ -4,62 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Détail Demande — Back Office Visa</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
-    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
-    .header h1 { font-size: 1.4em; }
-    .header nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 600; opacity: 0.85; transition: opacity 0.2s; }
-    .header nav a:hover { opacity: 1; }
-    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    .top-bar h2 { color: #1a5276; font-size: 1.3em; }
-
-    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 25px; margin-bottom: 20px; }
-    .card h3 { color: #1a5276; margin-bottom: 15px; font-size: 1.05em; border-bottom: 2px solid #ebf5fb; padding-bottom: 8px; }
-
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 30px; }
-    .info-item { padding: 8px 0; }
-    .info-item .label { font-size: 0.82em; color: #888; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-bottom: 3px; }
-    .info-item .value { font-size: 0.95em; color: #333; font-weight: 500; }
-    .info-item.full { grid-column: 1 / -1; }
-
-    .badge { display: inline-block; padding: 6px 16px; border-radius: 14px; font-size: 0.85em; font-weight: 600; }
-    .badge-cree { background: #d4edda; color: #155724; }
-    .badge-termine { background: #d1ecf1; color: #0c5460; }
-
-    .btn { padding: 10px 22px; border: none; border-radius: 6px; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
-    .btn-primary { background: #2980b9; color: #fff; }
-    .btn-primary:hover { background: #1a6fa0; }
-    .btn-success { background: #27ae60; color: #fff; }
-    .btn-success:hover { background: #219a52; }
-    .btn-secondary { background: #95a5a6; color: #fff; }
-    .btn-secondary:hover { background: #7f8c8d; }
-
-    .pieces-list { list-style: none; }
-    .pieces-list li { padding: 10px 14px; border: 1px solid #ecf0f1; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-    .pieces-list li .status-ok { color: #27ae60; font-weight: 600; }
-    .pieces-list li .status-no { color: #e74c3c; font-weight: 600; }
-
-    .alert { padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; font-weight: 500; display: none; }
-    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-
-    @media (max-width: 600px) {
-      .info-grid { grid-template-columns: 1fr; }
-      .header { flex-direction: column; gap: 10px; text-align: center; }
-    }
+    .container { max-width: 900px; margin: 28px auto; padding: 0 24px; }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Back Office Visa — Madagascar</h1>
+  <div class="header-brand">
+    <div class="logo-icon">🛂</div>
+    <h1>Back Office Visa<small>Madagascar</small></h1>
+  </div>
   <nav>
-    <a href="index.html">Nouvelle demande</a>
-    <a href="demandes.html">Liste des demandes</a>
+    <a href="index.html">✚ Nouvelle demande</a>
+    <a href="demandes.html">📋 Demandes</a>
+    <a href="duplicata.html">📄 Duplicata</a>
+    <a href="transfert.html">🔄 Transfert</a>
   </nav>
+  <!-- active class is set by JS on load -->
 </div>
 
 <div class="container">
@@ -72,18 +35,18 @@
 
   <!-- Statut -->
   <div class="card" id="section-statut">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <div>
-        <span style="font-size:0.85em; color:#888;">STATUT ACTUEL</span><br/>
-        <span class="badge" id="badge-statut"></span>
+    <div class="status-banner">
+      <div class="sb-item">
+        <div class="sb-label">Statut actuel</div>
+        <div class="sb-value"><span class="badge" id="badge-statut"></span></div>
       </div>
-      <div>
-        <span style="font-size:0.85em; color:#888;">DATE DE DEMANDE</span><br/>
-        <span id="date-demande" style="font-weight:600;"></span>
+      <div class="sb-item">
+        <div class="sb-label">Date de demande</div>
+        <div class="sb-value" id="date-demande">—</div>
       </div>
-      <div>
-        <span style="font-size:0.85em; color:#888;">DATE TRAITEMENT</span><br/>
-        <span id="date-traitement" style="font-weight:600;"></span>
+      <div class="sb-item">
+        <div class="sb-label">Date de traitement</div>
+        <div class="sb-value" id="date-traitement">—</div>
       </div>
     </div>
   </div>
@@ -169,8 +132,19 @@
 
       // Statut
       const badgeEl = document.getElementById('badge-statut');
-      badgeEl.textContent = d.statut === 1 ? 'Dossier créé' : 'Dossier terminé';
-      badgeEl.className = 'badge ' + (d.statut === 1 ? 'badge-cree' : 'badge-termine');
+      if (d.statut === 0) {
+        badgeEl.textContent = 'Dossier';
+        badgeEl.className = 'badge badge-incomplet';
+      } else if (d.statut === 1) {
+        badgeEl.textContent = 'Dossier créé';
+        badgeEl.className = 'badge badge-cree';
+      } else if (d.statut === 2) {
+        badgeEl.textContent = 'Dossier scanné';
+        badgeEl.className = 'badge badge-scanne';
+      } else {
+        badgeEl.textContent = d.statutLibelle || 'Dossier approuvé';
+        badgeEl.className = 'badge badge-approuve';
+      }
       document.getElementById('date-demande').textContent = d.dateDemande || '-';
       document.getElementById('date-traitement').textContent = d.dateTraitement || '-';
 
@@ -178,7 +152,9 @@
       const actionsDiv = document.getElementById('action-buttons');
       let actionsHtml = '<a class="btn btn-secondary" href="demandes.html">← Retour</a> ';
       if (d.statut === 1) {
-        actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
+        actionsHtml += '<button class="btn btn-primary" onclick="scannerDossier()">Scanner le dossier</button>';
+      } else if (d.statut === 2) {
+        actionsHtml += '<button class="btn btn-success" onclick="approuverDossier()">Approuver le dossier</button>';
       }
       actionsDiv.innerHTML = actionsHtml;
 
@@ -243,13 +219,26 @@
     }
   }
 
-  async function terminerDossier() {
-    if (!confirm('Confirmer ? Le dossier sera terminé et la carte résident sera générée. Cette action est irréversible.')) return;
+  async function scannerDossier() {
+    if (!confirm('Confirmer le scan du dossier ?')) return;
     try {
-      const res = await fetch('/api/demandes/' + demandeId + '/terminer', { method: 'PUT' });
+      const res = await fetch('/api/demandes/' + demandeId + '/scanner', { method: 'PUT' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur');
-      showAlert('Dossier terminé avec succès', 'success');
+      showAlert('Dossier scanné avec succès', 'success');
+      chargerDetail();
+    } catch (e) {
+      showAlert(e.message, 'error');
+    }
+  }
+
+  async function approuverDossier() {
+    if (!confirm('Confirmer ? Le dossier sera approuvé et la carte résident sera générée. Cette action est irréversible.')) return;
+    try {
+      const res = await fetch('/api/demandes/' + demandeId + '/approuver', { method: 'PUT' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur');
+      showAlert('Dossier approuvé avec succès', 'success');
       chargerDetail();
     } catch (e) {
       showAlert(e.message, 'error');
@@ -264,6 +253,11 @@
   }
 
   chargerDetail();
+
+  // Mark active nav link
+  document.querySelectorAll('.header nav a').forEach(a => {
+    if (a.getAttribute('href') === 'demandes.html') a.classList.add('active');
+  });
 </script>
 </body>
 </html>

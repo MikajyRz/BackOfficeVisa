@@ -3,97 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Demande de Visa et Carte de Résident</title>
+  <title>Nouvelle Demande — Back Office Visa</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
-    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
-    .header h1 { font-size: 1.4em; }
-    .header nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 600; opacity: 0.85; transition: opacity 0.2s; }
-    .header nav a:hover { opacity: 1; }
-    .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
-
-    /* Stepper */
-    .stepper { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; flex-wrap: wrap; }
-    .step-indicator { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 20px; background: #dfe6e9; font-size: 0.85em; font-weight: 600; transition: all 0.3s; }
-    .step-indicator.active { background: #2980b9; color: #fff; }
-    .step-indicator.done { background: #27ae60; color: #fff; }
-    .step-indicator .num { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.8em; }
-
-    /* Card */
-    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 20px; }
-    .card h2 { color: #1a5276; margin-bottom: 20px; font-size: 1.2em; border-bottom: 2px solid #ebf5fb; padding-bottom: 10px; }
     .step-section { display: none; }
     .step-section.active { display: block; }
-
-    /* Form */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-group { display: flex; flex-direction: column; }
-    .form-group.full { grid-column: 1 / -1; }
-    .form-group label { font-weight: 600; margin-bottom: 5px; font-size: 0.9em; color: #555; }
-    .form-group label .req { color: #e74c3c; }
-    .form-group input, .form-group select, .form-group textarea {
-      padding: 10px 12px; border: 1.5px solid #dcdde1; border-radius: 6px; font-size: 0.95em;
-      transition: border-color 0.2s;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      outline: none; border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,0.15);
-    }
-    .form-group textarea { resize: vertical; min-height: 60px; }
-
-    /* Pieces */
-    .pieces-section h3 { font-size: 1em; color: #1a5276; margin: 15px 0 10px; }
-    .piece-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #ecf0f1; border-radius: 6px; margin-bottom: 8px; transition: background 0.2s; }
-    .piece-item:hover { background: #ebf5fb; }
-    .piece-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2980b9; }
-    .piece-item label { cursor: pointer; flex: 1; font-size: 0.93em; }
-    .piece-item .badge { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    .badge.obligatoire { background: #fdecea; color: #c0392b; }
-    .badge.facultatif { background: #eafaf1; color: #27ae60; }
-
-    /* Recap */
-    .recap-table { width: 100%; border-collapse: collapse; }
-    .recap-table th, .recap-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ecf0f1; font-size: 0.93em; }
-    .recap-table th { background: #f8f9fa; color: #555; font-weight: 600; width: 40%; }
-
-    /* Buttons */
-    .btn-row { display: flex; justify-content: space-between; margin-top: 25px; gap: 12px; }
-    .btn { padding: 12px 28px; border: none; border-radius: 6px; font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-primary { background: #2980b9; color: #fff; }
-    .btn-primary:hover { background: #1a6fa0; }
-    .btn-secondary { background: #95a5a6; color: #fff; }
-    .btn-secondary:hover { background: #7f8c8d; }
-    .btn-success { background: #27ae60; color: #fff; }
-    .btn-success:hover { background: #219a52; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Alert */
-    .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: none; }
-    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-
-    /* Result */
-    .result-card { text-align: center; padding: 40px; }
-    .result-card .icon { font-size: 3em; margin-bottom: 15px; }
-    .result-card h2 { color: #27ae60; margin-bottom: 10px; }
-    .result-card .ref { background: #f8f9fa; padding: 12px 20px; border-radius: 8px; display: inline-block; margin-top: 15px; font-size: 1.1em; font-weight: 600; }
-
-    @media (max-width: 600px) {
-      .form-grid { grid-template-columns: 1fr; }
-      .stepper { gap: 5px; }
-      .step-indicator { font-size: 0.75em; padding: 6px 10px; }
-    }
+    .container { max-width: 860px; margin: 28px auto; padding: 0 24px; }
   </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Back Office Visa — Madagascar</h1>
+  <div class="header-brand">
+    <div class="logo-icon">🛂</div>
+    <h1>Back Office Visa<small>Madagascar</small></h1>
+  </div>
   <nav>
-    <a href="index.html" style="opacity:1; border-bottom: 2px solid #fff; padding-bottom: 3px;">Nouvelle demande</a>
-    <a href="demandes.html">Liste des demandes</a>
-    <a href="duplicata.html">Duplicata</a>
+    <a href="index.html" class="active">✚ Nouvelle demande</a>
+    <a href="demandes.html">📋 Demandes</a>
+    <a href="duplicata.html">📄 Duplicata</a>
+    <a href="transfert.html">🔄 Transfert</a>
   </nav>
 </div>
 
@@ -108,9 +37,8 @@
 
   <div id="alert" class="alert"></div>
 
-  <!-- ÉTAPE 1 : Informations personnelles -->
   <div class="card step-section active" id="step-1">
-    <h2>1. Informations personnelles</h2>
+    <h2>👤 1. Informations personnelles</h2>
     <div class="form-grid">
       <div class="form-group">
         <label>Nom <span class="req">*</span></label>
@@ -157,7 +85,7 @@
 
   <!-- ÉTAPE 2 : Passeport -->
   <div class="card step-section" id="step-2">
-    <h2>2. Informations du passeport</h2>
+    <h2>👁️‍🗨️ 2. Informations du passeport</h2>
     <div class="form-grid">
       <div class="form-group">
         <label>Numéro de passeport <span class="req">*</span></label>
@@ -184,7 +112,7 @@
 
   <!-- ÉTAPE 3 : Type de demande -->
   <div class="card step-section" id="step-3">
-    <h2>3. Type de demande</h2>
+    <h2>📝 3. Type de demande</h2>
     <div class="form-grid">
       <div class="form-group">
         <label>Type de demande <span class="req">*</span></label>
@@ -197,8 +125,8 @@
     </div>
 
     <!-- Section Visa Transformable -->
-    <div id="section-visa-transformable" style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #ebf5fb;">
-      <h3 style="color:#1a5276; margin-bottom: 15px;">Informations du visa</h3>
+    <div id="section-visa-transformable" class="visa-section">
+      <h3>📋 Informations du visa</h3>
       <div class="form-grid">
         <div class="form-group full">
           <label>Numéro de référence du visa <span class="req">*</span></label>
@@ -231,11 +159,11 @@
 
   <!-- ÉTAPE 4 : Pièces justificatives -->
   <div class="card step-section" id="step-4">
-    <h2>4. Pièces justificatives</h2>
+    <h2>📂 4. Pièces justificatives</h2>
     <div class="pieces-section">
-      <h3>Pièces communes (obligatoires pour toutes les demandes)</h3>
+      <h3>📄 Pièces communes (obligatoires pour toutes les demandes)</h3>
       <div id="pieces-communes"></div>
-      <h3 id="titre-pieces-spec" style="display:none;">Pièces spécifiques au type de visa</h3>
+      <h3 id="titre-pieces-spec" style="display:none;">📄 Pièces spécifiques au type de visa</h3>
       <div id="pieces-specifiques"></div>
     </div>
     <div class="btn-row">
@@ -246,7 +174,7 @@
 
   <!-- ÉTAPE 5 : Récapitulatif -->
   <div class="card step-section" id="step-5">
-    <h2>5. Récapitulatif de la demande</h2>
+    <h2>✔️ 5. Récapitulatif de la demande</h2>
     <div id="recap-content"></div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="prevStep(5)">← Modifier</button>
@@ -257,12 +185,13 @@
   <!-- Résultat -->
   <div class="card step-section" id="step-result">
     <div class="result-card">
-      <div class="icon">✅</div>
+      <div class="result-icon">✅</div>
       <h2>Dossier créé avec succès !</h2>
-      <p>Votre dossier a été enregistré. Toutes les pièces obligatoires ont été fournies.</p>
+      <p>Le dossier a été enregistré avec toutes les pièces fournies.</p>
       <div class="ref" id="result-ref"></div>
-      <div style="margin-top:20px">
-        <button class="btn btn-primary" onclick="location.reload()">Nouvelle demande</button>
+      <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+        <button class="btn btn-primary" onclick="location.reload()">✚ Nouvelle demande</button>
+        <a href="demandes.html" class="btn btn-secondary">📋 Voir la liste</a>
       </div>
     </div>
   </div>
@@ -492,20 +421,8 @@
       }
     }
     if (step === 4) {
-      // Vérifier pièces communes obligatoires
-      for (const p of refData.piecesCommunes) {
-        if (p.obligatoire && !document.getElementById('pc-' + p.id).checked) {
-          showAlert('Pièce obligatoire non cochée : ' + p.libelle, 'error'); return false;
-        }
-      }
-      // Vérifier pièces spécifiques obligatoires
-      if (refData.piecesSpecifiques) {
-        for (const p of refData.piecesSpecifiques) {
-          if (p.obligatoire && !document.getElementById('ps-' + p.id).checked) {
-            showAlert('Pièce spécifique obligatoire non cochée : ' + p.libelle, 'error'); return false;
-          }
-        }
-      }
+      // Les pièces facultatives peuvent être non cochées.
+      // Les pièces obligatoires manquantes donneront un statut "Dossier" (incomplet) au lieu de "Dossier créé".
     }
     return true;
   }
@@ -615,7 +532,7 @@
       if (!resCreate.ok) throw new Error(dataCreate.error || 'Erreur lors de la création');
 
       // Afficher le résultat
-      document.getElementById('result-ref').textContent = 'Demande N° ' + dataCreate.id + ' — Statut : ' + dataCreate.statut;
+      document.getElementById('result-ref').textContent = 'Demande N° ' + dataCreate.id + ' — Statut : ' + (dataCreate.statutLibelle || dataCreate.statut);
       document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
       document.getElementById('step-result').classList.add('active');
       document.querySelectorAll('.step-indicator').forEach(s => s.classList.add('done'));
