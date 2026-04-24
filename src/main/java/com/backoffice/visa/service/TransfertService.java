@@ -18,19 +18,22 @@ public class TransfertService {
     private final TypeDemandeRepository typeDemandeRepository;
     private final StatutDemandeRepository statutDemandeRepository;
     private final PasseportRepository passeportRepository;
+    private final VisaTransformableRepository visaTransformableRepository;
 
     public TransfertService(DemandeRepository demandeRepository,
                            DemandeTransfertRepository demandeTransfertRepository,
                            CarteResidentRepository carteResidentRepository,
                            TypeDemandeRepository typeDemandeRepository,
                            StatutDemandeRepository statutDemandeRepository,
-                           PasseportRepository passeportRepository) {
+                           PasseportRepository passeportRepository,
+                           VisaTransformableRepository visaTransformableRepository) {
         this.demandeRepository = demandeRepository;
         this.demandeTransfertRepository = demandeTransfertRepository;
         this.carteResidentRepository = carteResidentRepository;
         this.typeDemandeRepository = typeDemandeRepository;
         this.statutDemandeRepository = statutDemandeRepository;
         this.passeportRepository = passeportRepository;
+        this.visaTransformableRepository = visaTransformableRepository;
     }
 
     public Optional<Demande> rechercherDemandeEligible(String critere) {
@@ -145,10 +148,21 @@ public class TransfertService {
         nouveauPass.setDateExpiration(detail.getNouvelleDateExpiration());
         nouveauPass = passeportRepository.save(nouveauPass);
 
-        // Mettre à jour le visa transformable pour pointer vers le nouveau passeport
-        demande.getVisaTransformable().setPasseport(nouveauPass);
+        // 2. Créer un nouveau VisaTransformable (pour garder l'historique du passeport d'origine)
+        VisaTransformable ancienVisa = demande.getVisaTransformable();
+        VisaTransformable nouveauVisa = new VisaTransformable();
+        nouveauVisa.setDemandeur(demande.getDemandeur());
+        nouveauVisa.setPasseport(nouveauPass);
+        nouveauVisa.setNumeroReference(ancienVisa.getNumeroReference());
+        nouveauVisa.setLieu(ancienVisa.getLieu());
+        nouveauVisa.setDateDebut(ancienVisa.getDateDebut());
+        nouveauVisa.setDateFin(ancienVisa.getDateFin());
+        nouveauVisa = visaTransformableRepository.save(nouveauVisa);
 
-        // 2. Émettre nouvelle carte
+        // Mettre à jour la demande pour pointer vers le nouveau visa
+        demande.setVisaTransformable(nouveauVisa);
+
+        // 3. Émettre nouvelle carte
         CarteResident nouvelleCarte = new CarteResident();
         nouvelleCarte.setDemande(demande);
         nouvelleCarte.setPasseport(nouveauPass);

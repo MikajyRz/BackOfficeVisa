@@ -7,24 +7,24 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
-    .header { background: linear-gradient(135deg, #8e44ad, #9b59b6); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
     .header h1 { font-size: 1.4em; }
     .header nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 600; opacity: 0.85; transition: opacity 0.2s; }
     .header nav a:hover { opacity: 1; }
     .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
 
     .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 20px; }
-    .card h2 { color: #8e44ad; margin-bottom: 20px; font-size: 1.2em; border-bottom: 2px solid #f4ecf7; padding-bottom: 10px; }
+    .card h2 { color: #1a5276; margin-bottom: 20px; font-size: 1.2em; border-bottom: 2px solid #ebf5fb; padding-bottom: 10px; }
 
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
     .form-group.full { grid-column: 1 / -1; }
     .form-group label { font-weight: 600; margin-bottom: 5px; font-size: 0.9em; color: #555; }
     .form-group input, .form-group select { padding: 10px 12px; border: 1.5px solid #dcdde1; border-radius: 6px; font-size: 0.95em; }
-    .form-group input:focus { outline: none; border-color: #9b59b6; }
+    .form-group input:focus { outline: none; border-color: #2980b9; }
 
     .btn { padding: 12px 28px; border: none; border-radius: 6px; font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-primary { background: #8e44ad; color: #fff; }
+    .btn-primary { background: #2980b9; color: #fff; }
     .btn-secondary { background: #95a5a6; color: #fff; }
     .btn-success { background: #27ae60; color: #fff; }
 
@@ -35,15 +35,15 @@
     .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
     .search-box input { flex: 1; padding: 12px; border: 1.5px solid #dcdde1; border-radius: 6px; }
 
-    .result-info { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e1bee7; border-left: 5px solid #8e44ad; }
-    .result-info h3 { font-size: 1.1em; color: #8e44ad; margin-bottom: 12px; }
+    .result-info { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d1ecf1; border-left: 5px solid #1a5276; }
+    .result-info h3 { font-size: 1.1em; color: #1a5276; margin-bottom: 12px; }
     .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.95em; }
     .result-label { font-weight: 600; color: #666; }
 
     #form-transfert { display: none; }
     .comparison { display: flex; gap: 20px; margin-bottom: 20px; }
     .comparison-box { flex: 1; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
-    .comparison-box.new { background: #f4ecf7; border-color: #d1c4e9; }
+    .comparison-box.new { background: #ebf5fb; border-color: #bee5eb; }
     .comparison-box h4 { margin-bottom: 10px; font-size: 0.9em; text-transform: uppercase; color: #777; }
   </style>
 </head>
@@ -72,6 +72,109 @@
       <button class="btn btn-primary" onclick="rechercher()">Rechercher</button>
     </div>
     <div id="search-result"></div>
+
+    <div style="margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+      <p style="font-size: 0.9em; margin-bottom: 10px;">Le demandeur n'existe pas encore dans le système ?</p>
+      <button class="btn btn-secondary" onclick="afficherCas2()">Créer un dossier à partir de zéro (Cas 2)</button>
+    </div>
+  </div>
+
+  <!-- Cas 2 : Création complète -->
+  <div class="card" id="case-2-section" style="display:none;">
+    <h2>Création Dossier Antérieur (Cas 2)</h2>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
+      Ce formulaire permet de créer un demandeur, son passeport et une demande terminée en une seule étape.
+    </p>
+    <div class="form-grid" id="form-case-2">
+      <div class="form-group">
+        <label>Nom</label>
+        <input type="text" id="c2-nom" placeholder="Ex: DOE" />
+      </div>
+      <div class="form-group">
+        <label>Prénom</label>
+        <input type="text" id="c2-prenom" placeholder="Ex: John" />
+      </div>
+      <div class="form-group">
+        <label>Date de Naissance</label>
+        <input type="date" id="c2-dob" />
+      </div>
+      <div class="form-group">
+        <label>Lieu de Naissance</label>
+        <input type="text" id="c2-lieu-naissance" placeholder="Ex: Paris" />
+      </div>
+      <div class="form-group">
+        <label>Nationalité</label>
+        <select id="c2-idNationalite"></select>
+      </div>
+      <div class="form-group">
+        <label>Situation Familiale</label>
+        <select id="c2-idSituationFamiliale"></select>
+      </div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input type="text" id="c2-telephone" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="c2-email" />
+      </div>
+      <div class="form-group full">
+        <label>Adresse</label>
+        <input type="text" id="c2-adresse" />
+      </div>
+
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Informations Passeport</h3>
+      <div class="form-group">
+        <label>Numéro Passeport</label>
+        <input type="text" id="c2-numeroPasseport" />
+      </div>
+      <div class="form-group">
+        <label>Pays de délivrance</label>
+        <input type="text" id="c2-paysDelivrance" value="Madagascar" />
+      </div>
+      <div class="form-group">
+        <label>Date de délivrance</label>
+        <input type="date" id="c2-dateDelivrancePasseport" />
+      </div>
+      <div class="form-group">
+        <label>Date d'expiration</label>
+        <input type="date" id="c2-dateExpirationPasseport" />
+      </div>
+
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Informations Visa Transformable</h3>
+      <div class="form-group">
+        <label>Type de Visa</label>
+        <select id="c2-idTypeVisa" onchange="chargerPiecesSpecifiques()"></select>
+      </div>
+      <div class="form-group">
+        <label>Référence Visa</label>
+        <input type="text" id="c2-numeroReferenceVisa" />
+      </div>
+      <div class="form-group">
+        <label>Lieu de délivrance</label>
+        <input type="text" id="c2-lieuVisa" />
+      </div>
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" id="c2-dateDebutVisa" />
+      </div>
+      <div class="form-group">
+        <label>Date de fin</label>
+        <input type="date" id="c2-dateFinVisa" />
+      </div>
+
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Pièces Justificatives (Auto)</h3>
+      <div id="c2-pieces-communes" class="form-group full" style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+        <p style="font-size: 0.85em; color: #666;">Chargement des pièces communes...</p>
+      </div>
+      <div id="c2-pieces-specifiques" class="form-group full" style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+        <p style="font-size: 0.85em; color: #666;">Veuillez choisir un type de visa</p>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top: 20px; display: flex; justify-content: space-between;">
+      <button class="btn btn-secondary" onclick="location.reload()">Retour</button>
+      <button class="btn btn-primary" onclick="creerDossierTermine()">Créer le dossier et passer au transfert</button>
+    </div>
   </div>
 
   <div class="card" id="form-transfert">
@@ -117,6 +220,92 @@
 
 <script>
   let currentDemandeOrigine = null;
+  let refData = {
+    nationalites: [],
+    situations: [],
+    typesVisa: [],
+    piecesCommunes: [],
+    piecesSpecifiques: []
+  };
+
+  // Charger les données de référence au démarrage
+  async function chargerDonneesReference() {
+    try {
+      const [natRes, sitRes, visaRes, pcRes] = await Promise.all([
+        fetch('/api/references/nationalites'),
+        fetch('/api/references/situations-familiales'),
+        fetch('/api/references/types-visa'),
+        fetch('/api/references/pieces-communes')
+      ]);
+
+      refData.nationalites = await natRes.json();
+      refData.situations = await sitRes.json();
+      refData.typesVisa = await visaRes.json();
+      refData.piecesCommunes = await pcRes.json();
+
+      remplirSelect('c2-idNationalite', refData.nationalites);
+      remplirSelect('c2-idSituationFamiliale', refData.situations);
+      remplirSelect('c2-idTypeVisa', refData.typesVisa);
+      
+      afficherPiecesCommunes();
+    } catch (e) {
+      console.error("Erreur lors du chargement des références", e);
+    }
+  }
+
+  function remplirSelect(id, data) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Choisir...</option>';
+    data.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.libelle;
+      sel.appendChild(opt);
+    });
+  }
+
+  function afficherPiecesCommunes() {
+    const container = document.getElementById('c2-pieces-communes');
+    if (!container) return;
+    container.innerHTML = '<p style="font-weight:600; font-size:0.85em; margin-bottom:5px;">Pièces communes :</p>';
+    refData.piecesCommunes.forEach(p => {
+      container.innerHTML += `
+        <div style="font-size:0.85em; margin-bottom:3px;">
+          <input type="checkbox" id="c2-pc-${p.id}" checked disabled /> 
+          <label>${p.libelle} (Auto)</label>
+        </div>
+      `;
+    });
+  }
+
+  async function chargerPiecesSpecifiques() {
+    const typeVisaId = document.getElementById('c2-idTypeVisa').value;
+    const container = document.getElementById('c2-pieces-specifiques');
+    if (!typeVisaId) {
+      container.innerHTML = '<p style="font-size: 0.85em; color: #666;">Veuillez choisir un type de visa</p>';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/references/pieces-specifiques/' + typeVisaId);
+      refData.piecesSpecifiques = await res.json();
+      container.innerHTML = '<p style="font-weight:600; font-size:0.85em; margin-bottom:5px;">Pièces spécifiques :</p>';
+      if (refData.piecesSpecifiques.length === 0) {
+        container.innerHTML += '<p style="font-size:0.85em; color:#666;">Aucune pièce spécifique pour ce type.</p>';
+      }
+      refData.piecesSpecifiques.forEach(p => {
+        container.innerHTML += `
+          <div style="font-size:0.85em; margin-bottom:3px;">
+            <input type="checkbox" id="c2-ps-${p.id}" checked disabled /> 
+            <label>${p.libelle} (Auto)</label>
+          </div>
+        `;
+      });
+    } catch (e) {
+      container.innerHTML = '<p style="color:red">Erreur chargement pièces</p>';
+    }
+  }
 
   function showAlert(msg, type='success') {
     const alert = document.getElementById('alert');
@@ -125,6 +314,69 @@
     alert.style.display = 'block';
     window.scrollTo(0, 0);
     if (type === 'success') setTimeout(() => alert.style.display='none', 4000);
+  }
+
+  function afficherCas2() {
+    document.getElementById('search-section').style.display = 'none';
+    document.getElementById('case-2-section').style.display = 'block';
+  }
+
+  async function creerDossierTermine() {
+    const v = (id) => document.getElementById(id).value;
+    
+    // On force toutes les pièces car c'est une création de dossier "antérieur"
+    const piecesCommunesPresentes = refData.piecesCommunes.map(p => p.id);
+    const piecesSpecifiquesPresentes = refData.piecesSpecifiques.map(p => p.id);
+
+    const payload = {
+      nom: v('c2-nom'),
+      prenom: v('c2-prenom'),
+      dateNaissance: v('c2-dob'),
+      lieuNaissance: v('c2-lieu-naissance'),
+      telephone: v('c2-telephone'),
+      email: v('c2-email'),
+      adresse: v('c2-adresse'),
+      idNationalite: parseInt(v('c2-idNationalite')),
+      idSituationFamiliale: parseInt(v('c2-idSituationFamiliale')),
+      numeroPasseport: v('c2-numeroPasseport'),
+      dateDelivrancePasseport: v('c2-dateDelivrancePasseport'),
+      dateExpirationPasseport: v('c2-dateExpirationPasseport'),
+      paysDelivrance: v('c2-paysDelivrance'),
+      idTypeVisa: parseInt(v('c2-idTypeVisa')),
+      idTypeDemande: 1, // Carte de Résident
+      numeroReferenceVisa: v('c2-numeroReferenceVisa'),
+      lieuVisa: v('c2-lieuVisa'),
+      dateDebutVisa: v('c2-dateDebutVisa'),
+      dateFinVisa: v('c2-dateFinVisa'),
+      piecesCommunesPresentes: piecesCommunesPresentes,
+      piecesSpecifiquesPresentes: piecesSpecifiquesPresentes
+    };
+
+    if (!payload.nom || !payload.numeroPasseport || !payload.idTypeVisa) {
+      showAlert("Veuillez remplir les champs obligatoires", "error");
+      return;
+    }
+
+    try {
+      const resp = await fetch('/api/demandes/termines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (resp.ok) {
+        const d = await resp.json();
+        currentDemandeOrigine = d;
+        showAlert("Dossier antérieur créé ! Passage au formulaire de transfert.");
+        setTimeout(() => {
+          document.getElementById('case-2-section').style.display = 'none';
+          ouvrirFormTransfert();
+        }, 1500);
+      } else {
+        const err = await resp.json();
+        showAlert("Erreur : " + (err.error || "Impossible de créer le dossier"), "error");
+      }
+    } catch (e) { showAlert("Erreur lors de la création", "error"); }
   }
 
   async function rechercher() {
@@ -194,6 +446,8 @@
       }
     } catch (e) { showAlert("Erreur", "error"); }
   }
+
+  chargerDonneesReference();
 </script>
 </body>
 </html>
