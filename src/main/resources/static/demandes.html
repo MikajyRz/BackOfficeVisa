@@ -38,6 +38,10 @@
     .badge-duplicata-valide { background: #cce5ff; color: #004085; }
     .badge-duplicata-rejete { background: #f8d7da; color: #721c24; }
     .badge-duplicata-emis { background: #d4edda; color: #155724; }
+    .badge-transfert-demande { background: #f3e5f5; color: #7b1fa2; }
+    .badge-transfert-valide { background: #e1bee7; color: #6a1b9a; }
+    .badge-transfert-rejete { background: #ffebee; color: #c62828; }
+    .badge-transfert-emis { background: #d4edda; color: #155724; }
 
     .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.88em; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
     .btn-primary { background: #2980b9; color: #fff; }
@@ -70,6 +74,7 @@
     <a href="index.html">Nouvelle demande</a>
     <a href="demandes.html" style="opacity:1; border-bottom: 2px solid #fff; padding-bottom: 3px;">Liste des demandes</a>
     <a href="duplicata.html">Duplicata</a>
+    <a href="transfert.html">Transfert</a>
   </nav>
 </div>
 
@@ -104,6 +109,10 @@
         <option value="11">Duplicata validé</option>
         <option value="12">Duplicata rejeté</option>
         <option value="13">Duplicata émis</option>
+        <option value="20">Transfert demandé</option>
+        <option value="21">Transfert validé</option>
+        <option value="22">Transfert rejeté</option>
+        <option value="23">Transfert émis</option>
       </select>
       <select id="filter-type-demande" onchange="filtrerDemandes()">
         <option value="">Tous les types de demande</option>
@@ -186,6 +195,10 @@
       case 11: return 'badge-duplicata-valide';
       case 12: return 'badge-duplicata-rejete';
       case 13: return 'badge-duplicata-emis';
+      case 20: return 'badge-transfert-demande';
+      case 21: return 'badge-transfert-valide';
+      case 22: return 'badge-transfert-rejete';
+      case 23: return 'badge-transfert-emis';
       default: return '';
     }
   }
@@ -211,6 +224,11 @@
         actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterDuplicata(${d.id})">Rejeter</button>`;
       } else if (d.statut === 11) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreDuplicata(${d.id})">Émettre Carte</button>`;
+      } else if (d.statut === 20) {
+        actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); validerTransfert(${d.id})">Valider</button> `;
+        actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterTransfert(${d.id})">Rejeter</button>`;
+      } else if (d.statut === 21) {
+        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreTransfert(${d.id})">Transférer</button>`;
       }
 
       return `
@@ -254,6 +272,37 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'émission');
       showAlert('Duplicata émis avec succès : ' + data.reference, 'success');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
+  }
+
+  async function validerTransfert(id) {
+    if (!confirm('Valider cette demande de transfert ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/transfert/${id}/valider`, { method: 'PUT' });
+      if (!res.ok) throw new Error('Erreur');
+      showAlert('Transfert validé');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
+  }
+
+  async function rejeterTransfert(id) {
+    if (!confirm('Rejeter cette demande de transfert ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/transfert/${id}/rejeter`, { method: 'PUT' });
+      if (!res.ok) throw new Error('Erreur');
+      showAlert('Transfert rejeté');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
+  }
+
+  async function emettreTransfert(id) {
+    if (!confirm('Finaliser le transfert et émettre la carte ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/transfert/${id}/emettre`, { method: 'PUT' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur');
+      showAlert('Transfert effectué ! Nouvelle carte : ' + data.reference);
       chargerDemandes();
     } catch (e) { showAlert(e.message, 'error'); }
   }

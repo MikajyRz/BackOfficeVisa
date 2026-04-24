@@ -28,6 +28,10 @@ public class Demande {
     public static final int STATUT_DUPLICATA_VALIDE = 11;
     public static final int STATUT_DUPLICATA_REJETE = 12;
     public static final int STATUT_DUPLICATA_EMIS = 13;
+    public static final int STATUT_TRANSFERT_DEMANDE = 20;
+    public static final int STATUT_TRANSFERT_VALIDE = 21;
+    public static final int STATUT_TRANSFERT_REJETE = 22;
+    public static final int STATUT_TRANSFERT_EMIS = 23;
 
     @ManyToOne
     @JoinColumn(name = "id_demandeur", nullable = false)
@@ -71,6 +75,10 @@ public class Demande {
             case STATUT_DUPLICATA_VALIDE -> "Duplicata validé";
             case STATUT_DUPLICATA_REJETE -> "Duplicata rejeté";
             case STATUT_DUPLICATA_EMIS -> "Duplicata émis";
+            case STATUT_TRANSFERT_DEMANDE -> "Transfert demandé";
+            case STATUT_TRANSFERT_VALIDE -> "Transfert validé";
+            case STATUT_TRANSFERT_REJETE -> "Transfert rejeté";
+            case STATUT_TRANSFERT_EMIS -> "Transfert émis";
             default -> "Inconnu (" + statut + ")";
         };
     }

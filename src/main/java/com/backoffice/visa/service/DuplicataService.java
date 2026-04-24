@@ -17,41 +17,62 @@ public class DuplicataService {
     private final DemandeDuplicataRepository demandeDuplicataRepository;
     private final StatutDemandeRepository statutDemandeRepository;
     private final TypeDemandeRepository typeDemandeRepository;
+    private final com.backoffice.visa.repository.PasseportRepository passeportRepository;
 
     public DuplicataService(
             DemandeRepository demandeRepository,
             CarteResidentRepository carteResidentRepository,
             DemandeDuplicataRepository demandeDuplicataRepository,
             StatutDemandeRepository statutDemandeRepository,
-            TypeDemandeRepository typeDemandeRepository) {
+            TypeDemandeRepository typeDemandeRepository,
+            com.backoffice.visa.repository.PasseportRepository passeportRepository) {
         this.demandeRepository = demandeRepository;
         this.carteResidentRepository = carteResidentRepository;
         this.demandeDuplicataRepository = demandeDuplicataRepository;
         this.statutDemandeRepository = statutDemandeRepository;
         this.typeDemandeRepository = typeDemandeRepository;
+        this.passeportRepository = passeportRepository;
     }
 
     /**
      * Recherche une demande éligible au duplicata par numéro de passeport ou référence carte
      */
     public Optional<Demande> rechercherDemandeEligible(String critere) {
-        // Recherche par ID de demande d'origine pour simplifier dans un premier temps, 
-        // ou on pourrait chercher par numéro de passeport via Demandeur.
-        // Ici on va chercher par ID de demande ou par référence de carte.
+        Optional<Demande> demandeOpt = Optional.empty();
         
-        // Tentative par ID
+        // 1. Tentative par ID de demande
         try {
             Long id = Long.parseLong(critere);
-            return demandeRepository.findById(id)
-                    .filter(d -> d.getStatut() == Demande.STATUT_TERMINE);
+            demandeOpt = demandeRepository.findById(id);
         } catch (NumberFormatException e) {
-            // Tentative par référence de carte
-            return carteResidentRepository.findAll().stream()
+            // Pas un ID numérique
+        }
+
+        // 2. Si non trouvé, tentative par Référence de Carte
+        if (demandeOpt.isEmpty()) {
+            demandeOpt = carteResidentRepository.findAll().stream()
                     .filter(c -> critere.equalsIgnoreCase(c.getReference()))
                     .map(CarteResident::getDemande)
-                    .filter(d -> d.getStatut() == Demande.STATUT_TERMINE)
                     .findFirst();
         }
+
+        // 3. Si toujours non trouvé, tentative par Numéro de Passeport
+        if (demandeOpt.isEmpty()) {
+            demandeOpt = passeportRepository.findAll().stream()
+                    .filter(p -> critere.equalsIgnoreCase(p.getNumeroPasseport()))
+                    .map(p -> {
+                        // On cherche la dernière demande terminée pour ce demandeur
+                        return demandeRepository.findByDemandeurId(p.getDemandeur().getId()).stream()
+                                .filter(d -> d.getStatut() == Demande.STATUT_TERMINE)
+                                .sorted((d1, d2) -> d2.getId().compareTo(d1.getId())) // La plus récente
+                                .findFirst();
+                    })
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .findFirst();
+        }
+
+        return demandeOpt.filter(d -> d.getStatut() == Demande.STATUT_TERMINE);
     }
 
     /**
