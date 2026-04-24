@@ -38,41 +38,35 @@ public class DuplicataService {
      * Recherche une demande éligible au duplicata par numéro de passeport ou référence carte
      */
     public Optional<Demande> rechercherDemandeEligible(String critere) {
-        Optional<Demande> demandeOpt = Optional.empty();
+        Optional<Demande> demandeOpt;
         
         // 1. Tentative par ID de demande
         try {
             Long id = Long.parseLong(critere);
             demandeOpt = demandeRepository.findById(id);
         } catch (NumberFormatException e) {
-            // Pas un ID numérique
-        }
-
-        // 2. Si non trouvé, tentative par Référence de Carte
-        if (demandeOpt.isEmpty()) {
+            // Tentative par référence de carte
             demandeOpt = carteResidentRepository.findAll().stream()
                     .filter(c -> critere.equalsIgnoreCase(c.getReference()))
                     .map(CarteResident::getDemande)
                     .findFirst();
         }
 
-        // 3. Si toujours non trouvé, tentative par Numéro de Passeport
-        if (demandeOpt.isEmpty()) {
-            demandeOpt = passeportRepository.findAll().stream()
-                    .filter(p -> critere.equalsIgnoreCase(p.getNumeroPasseport()))
-                    .map(p -> {
-                        // On cherche la dernière demande terminée pour ce demandeur
-                        return demandeRepository.findByDemandeurId(p.getDemandeur().getId()).stream()
-                                .filter(d -> d.getStatut() == Demande.STATUT_TERMINE)
-                                .sorted((d1, d2) -> d2.getId().compareTo(d1.getId())) // La plus récente
-                                .findFirst();
-                    })
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .findFirst();
-        }
+        return demandeOpt.filter(this::estEligibleAuDuplicata);
+    }
 
-        return demandeOpt.filter(d -> d.getStatut() == Demande.STATUT_TERMINE);
+    private boolean estEligibleAuDuplicata(Demande d) {
+        // 1. La demande d'origine doit être terminée
+        if (d.getStatut() != Demande.STATUT_TERMINE) return false;
+
+        // 2. Une carte de résident doit exister
+        Optional<CarteResident> carteOpt = carteResidentRepository.findByDemandeId(d.getId());
+        if (carteOpt.isEmpty()) return false;
+
+        // 3. La carte ne doit pas être expirée (on fait un renouvellement sinon)
+        if (carteOpt.get().getDateFin().isBefore(LocalDate.now())) return false;
+
+        return true;
     }
 
     /**
@@ -83,12 +77,30 @@ public class DuplicataService {
         Demande demandeOrigine = demandeRepository.findById(form.getIdDemandeOrigine())
                 .orElseThrow(() -> new RuntimeException("Demande d'origine introuvable"));
 
-        if (demandeOrigine.getStatut() != Demande.STATUT_TERMINE) {
-            throw new RuntimeException("La demande d'origine doit être terminée");
+        if (!estEligibleAuDuplicata(demandeOrigine)) {
+            throw new RuntimeException("Ce dossier n'est pas éligible au duplicata (soit non terminé, soit carte expirée)");
+        }
+
+        // RÈGLE : Pas de demande de duplicata déjà en cours pour ce demandeur
+        boolean aDejaUneDemandeEnCours = demandeRepository.findByDemandeurId(demandeOrigine.getDemandeur().getId()).stream()
+                .anyMatch(d -> d.getStatut() == Demande.STATUT_DUPLICATA_DEMANDE || d.getStatut() == Demande.STATUT_DUPLICATA_VALIDE);
+        
+        if (aDejaUneDemandeEnCours) {
+            throw new RuntimeException("Une demande de duplicata est déjà en cours pour ce demandeur");
         }
 
         CarteResident carteOrigine = carteResidentRepository.findByDemandeId(demandeOrigine.getId())
                 .orElseThrow(() -> new RuntimeException("Carte de résident d'origine introuvable"));
+
+        // RÈGLE : Validation des dates
+        if ("Perte".equals(form.getMotif()) || "Vol".equals(form.getMotif())) {
+            if (form.getDateDeclaration() == null) {
+                throw new RuntimeException("La date de déclaration est obligatoire pour perte ou vol");
+            }
+            if (form.getDateDeclaration().isAfter(LocalDate.now())) {
+                throw new RuntimeException("La date de déclaration ne peut pas être dans le futur");
+            }
+        }
 
         // Créer une nouvelle Demande pour le duplicata
         Demande demandeDuplicata = new Demande();
@@ -115,10 +127,16 @@ public class DuplicataService {
         detail.setMotif(form.getMotif());
         detail.setDateDeclaration(form.getDateDeclaration());
         detail.setReferenceAncienneCarte(carteOrigine.getReference());
-        detail.setDateDelivranceDuplicata(form.getDateDelivranceDuplicata() != null ? form.getDateDelivranceDuplicata() : LocalDate.now());
         
-        // Date expiration : par défaut celle de la carte d'origine
-        detail.setDateExpirationDuplicata(form.getDateExpirationDuplicata() != null ? form.getDateExpirationDuplicata() : carteOrigine.getDateFin());
+        // RÈGLE : Date de délivrance du duplicata >= aujourd'hui
+        LocalDate dateDelivrance = form.getDateDelivranceDuplicata() != null ? form.getDateDelivranceDuplicata() : LocalDate.now();
+        if (dateDelivrance.isBefore(LocalDate.now())) {
+            throw new RuntimeException("La date de délivrance ne peut pas être dans le passé");
+        }
+        detail.setDateDelivranceDuplicata(dateDelivrance);
+        
+        // RÈGLE : Un duplicata conserve la date d'expiration de la carte d'origine
+        detail.setDateExpirationDuplicata(carteOrigine.getDateFin());
         
         return demandeDuplicataRepository.save(detail);
     }

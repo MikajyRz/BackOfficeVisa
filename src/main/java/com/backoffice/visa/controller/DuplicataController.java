@@ -17,16 +17,24 @@ import java.util.Optional;
 public class DuplicataController {
 
     private final DuplicataService duplicataService;
+    private final com.backoffice.visa.repository.CarteResidentRepository carteResidentRepository;
 
-    public DuplicataController(DuplicataService duplicataService) {
+    public DuplicataController(DuplicataService duplicataService, com.backoffice.visa.repository.CarteResidentRepository carteResidentRepository) {
         this.duplicataService = duplicataService;
+        this.carteResidentRepository = carteResidentRepository;
     }
 
     @GetMapping("/recherche")
     public ResponseEntity<?> rechercher(@RequestParam String critere) {
-        Optional<Demande> demande = duplicataService.rechercherDemandeEligible(critere);
-        if (demande.isPresent()) {
-            return ResponseEntity.ok(demande.get());
+        Optional<Demande> demandeOpt = duplicataService.rechercherDemandeEligible(critere);
+        if (demandeOpt.isPresent()) {
+            Demande d = demandeOpt.get();
+            Optional<CarteResident> carteOpt = carteResidentRepository.findByDemandeId(d.getId());
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("demande", d);
+            result.put("carte", carteOpt.orElse(null));
+            return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.notFound().build();
         }

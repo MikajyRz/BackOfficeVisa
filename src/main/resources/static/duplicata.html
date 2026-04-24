@@ -83,15 +83,15 @@
     <div class="form-grid">
       <div class="form-group full">
         <label>Motif du duplicata</label>
-        <select id="motif">
+        <select id="motif" onchange="toggleDateDeclaration()">
           <option value="Perte">Perte</option>
           <option value="Vol">Vol</option>
           <option value="Détérioration">Détérioration</option>
           <option value="Autre">Autre</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Date de déclaration (si applicable)</label>
+      <div class="form-group" id="group-declaration">
+        <label id="label-declaration">Date de déclaration (Perte/Vol)</label>
         <input type="date" id="dateDeclaration" />
       </div>
       <div class="form-group">
@@ -99,8 +99,8 @@
         <input type="date" id="dateDelivrance" />
       </div>
       <div class="form-group">
-        <label>Date d'expiration du duplicata</label>
-        <input type="date" id="dateExpiration" />
+        <label>Date d'expiration (Identique à l'originale)</label>
+        <input type="date" id="dateExpiration" disabled style="background: #f0f0f0; cursor: not-allowed;" />
       </div>
     </div>
     <div class="btn-row" style="margin-top: 20px; display: flex; justify-content: space-between;">
@@ -212,6 +212,7 @@
 
 <script>
   let currentDemandeOrigine = null;
+  let currentCarteOrigine = null;
   let refData = {
     nationalites: [],
     situations: [],
@@ -312,11 +313,12 @@
     try {
       const resp = await fetch(`/api/cartes-resident/duplicata/recherche?critere=${critere}`);
       if (resp.ok) {
-        const demande = await resp.json();
-        currentDemandeOrigine = demande;
-        afficherResultatRecherche(demande);
+        const result = await resp.json();
+        currentDemandeOrigine = result.demande;
+        currentCarteOrigine = result.carte;
+        afficherResultatRecherche(result.demande, result.carte);
       } else {
-        showAlert("Aucun dossier éligible trouvé pour ce critère.", "error");
+        showAlert("Aucun dossier éligible trouvé pour ce critère (Dossier doit être terminé et carte non expirée).", "error");
         document.getElementById('search-result').innerHTML = '';
       }
     } catch (e) {
@@ -324,7 +326,7 @@
     }
   }
 
-  function afficherResultatRecherche(d) {
+  function afficherResultatRecherche(d, c) {
     const resDiv = document.getElementById('search-result');
     resDiv.innerHTML = `
       <div class="result-info">
@@ -332,9 +334,27 @@
         <p><b>Passeport :</b> ${d.visaTransformable.passeport.numeroPasseport}</p>
         <p><b>Type de visa :</b> ${d.typeVisa.libelle}</p>
         <p><b>Statut actuel :</b> ${d.statutLibelle}</p>
+        <p><b>Carte Actuelle :</b> ${c ? c.reference : 'Inconnue'} (Expire le : ${c ? c.dateFin : 'N/A'})</p>
         <button class="btn btn-success" style="margin-top:10px; width:100%" onclick="ouvrirFormDuplicata()">Choisir ce dossier pour le duplicata</button>
       </div>
     `;
+  }
+
+  function toggleDateDeclaration() {
+    const motif = document.getElementById('motif').value;
+    const group = document.getElementById('group-declaration');
+    const label = document.getElementById('label-declaration');
+    const input = document.getElementById('dateDeclaration');
+    
+    if (motif === 'Perte' || motif === 'Vol') {
+      group.style.display = 'flex';
+      label.innerHTML = `Date de déclaration (${motif}) <span style="color:red">*</span>`;
+      input.required = true;
+    } else {
+      group.style.display = 'none';
+      input.required = false;
+      input.value = '';
+    }
   }
 
   function ouvrirFormDuplicata() {
@@ -343,10 +363,14 @@
     
     // Valeurs par défaut
     document.getElementById('dateDelivrance').valueAsDate = new Date();
-    // Expiration + 10 ans (approximatif pour le test)
-    let exp = new Date();
-    exp.setFullYear(exp.getFullYear() + 10);
-    document.getElementById('dateExpiration').valueAsDate = exp;
+    
+    // RÈGLE : La date d'expiration est fixée à celle de la carte d'origine
+    if (currentCarteOrigine) {
+      document.getElementById('dateExpiration').value = currentCarteOrigine.dateFin;
+    }
+
+    // Appel initial pour cacher/montrer la date de déclaration
+    toggleDateDeclaration();
   }
 
   function annulerForm() {
