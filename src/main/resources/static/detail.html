@@ -27,7 +27,7 @@
 
     .badge { display: inline-block; padding: 6px 16px; border-radius: 14px; font-size: 0.85em; font-weight: 600; }
     .badge-cree { background: #d4edda; color: #155724; }
-    .badge-scanne { background: #d1ecf1; color: #0c5460; }
+    .badge-termine { background: #d1ecf1; color: #0c5460; }
 
     .btn { padding: 10px 22px; border: none; border-radius: 6px; font-size: 0.9em; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
     .btn-primary { background: #2980b9; color: #fff; }
@@ -59,6 +59,8 @@
   <nav>
     <a href="index.html">Nouvelle demande</a>
     <a href="demandes.html">Liste des demandes</a>
+    <a href="duplicata.html">Duplicata</a>
+    <a href="transfert.html">Transfert</a>
   </nav>
 </div>
 
@@ -140,6 +142,25 @@
     <h3>Pièces justificatives</h3>
     <ul class="pieces-list" id="pieces-list"></ul>
   </div>
+
+  <!-- Détails spécifiques Transfert -->
+  <div class="card" id="section-transfert" style="display:none; border-left: 5px solid #8e44ad;">
+    <h3>Détails du Transfert (Nouveau Passeport)</h3>
+    <div class="info-grid">
+      <div class="info-item"><div class="label">Nouveau Numéro</div><div class="value" id="dt-num"></div></div>
+      <div class="info-item"><div class="label">Pays</div><div class="value" id="dt-pays"></div></div>
+      <div class="info-item"><div class="label">Date Délivrance</div><div class="value" id="dt-date-delivrance"></div></div>
+      <div class="info-item"><div class="label">Date Expiration</div><div class="value" id="dt-date-expiration"></div></div>
+    </div>
+  </div>
+
+  <!-- Détails spécifiques Duplicata -->
+  <div class="card" id="section-duplicata" style="display:none; border-left: 5px solid #f39c12;">
+    <h3>Détails du Duplicata</h3>
+    <div class="info-grid">
+      <div class="info-item full"><div class="label">Motif du duplicata</div><div class="value" id="dd-motif"></div></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -169,18 +190,61 @@
 
       // Statut
       const badgeEl = document.getElementById('badge-statut');
-      badgeEl.textContent = d.statut === 1 ? 'Dossier créé' : 'Dossier scanné';
-      badgeEl.className = 'badge ' + (d.statut === 1 ? 'badge-cree' : 'badge-scanne');
+      const statusMap = {
+        1: { text: 'Dossier créé', class: 'badge-cree' },
+        2: { text: 'Dossier terminé', class: 'badge-termine' },
+        10: { text: 'Duplicata demandé', class: 'badge-cree' },
+        11: { text: 'Duplicata validé', class: 'badge-termine' },
+        12: { text: 'Duplicata rejeté', class: 'badge-no' },
+        13: { text: 'Duplicata émis', class: 'badge-termine' },
+        20: { text: 'Transfert demandé', class: 'badge-cree' },
+        21: { text: 'Transfert validé', class: 'badge-termine' },
+        22: { text: 'Transfert rejeté', class: 'badge-no' },
+        23: { text: 'Transfert émis', class: 'badge-termine' }
+      };
+      const s = statusMap[d.statut] || { text: 'Inconnu (' + d.statut + ')', class: '' };
+      badgeEl.textContent = s.text;
+      badgeEl.className = 'badge ' + s.class;
       document.getElementById('date-demande').textContent = d.dateDemande || '-';
       document.getElementById('date-traitement').textContent = d.dateTraitement || '-';
 
       // Actions
       const actionsDiv = document.getElementById('action-buttons');
       let actionsHtml = '<a class="btn btn-secondary" href="demandes.html">← Retour</a> ';
+      
       if (d.statut === 1) {
-        actionsHtml += '<button class="btn btn-success" onclick="scannerDossier()">Scanner le dossier</button>';
+        actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
+      } else if (d.statut === 10) {
+        actionsHtml += '<button class="btn btn-success" onclick="validerDuplicata()">Valider</button> ';
+        actionsHtml += '<button class="btn btn-secondary" style="background:#e74c3c" onclick="rejeterDuplicata()">Rejeter</button>';
+      } else if (d.statut === 11) {
+        actionsHtml += '<button class="btn btn-success" onclick="emettreDuplicata()">Émettre le duplicata</button>';
+      } else if (d.statut === 20) {
+        actionsHtml += '<button class="btn btn-success" onclick="validerTransfert()">Valider</button> ';
+        actionsHtml += '<button class="btn btn-secondary" style="background:#e74c3c" onclick="rejeterTransfert()">Rejeter</button>';
+      } else if (d.statut === 21) {
+        actionsHtml += '<button class="btn btn-success" onclick="emettreTransfert()">Émettre le transfert</button>';
       }
+      
       actionsDiv.innerHTML = actionsHtml;
+
+      // Détails spécifiques Transfert
+      if (d.statut >= 20 && d.statut <= 23) {
+        try {
+          const transRes = await fetch('/api/cartes-resident/transfert/demande/' + d.id);
+          if (transRes.ok) {
+            const t = await transRes.json();
+            document.getElementById('section-transfert').style.display = 'block';
+            document.getElementById('dt-num').textContent = t.nouveauNumeroPasseport;
+            document.getElementById('dt-pays').textContent = t.nouveauPaysDelivrance;
+            document.getElementById('dt-date-delivrance').textContent = t.nouvelleDateDelivrance;
+            document.getElementById('dt-date-expiration').textContent = t.nouvelleDateExpiration;
+          }
+        } catch(e) {}
+      }
+
+      // Détails spécifiques Duplicata (similaire si endpoint existe)
+      // if (d.statut >= 10 && d.statut <= 13) { ... }
 
       // Demandeur
       if (d.demandeur) {
@@ -243,17 +307,54 @@
     }
   }
 
-  async function scannerDossier() {
-    if (!confirm('Confirmer le scan du dossier ? Cette action est irréversible.')) return;
+  async function terminerDossier() {
+    if (!confirm('Confirmer ? Le dossier sera terminé et la carte résident sera générée. Cette action est irréversible.')) return;
     try {
-      const res = await fetch('/api/demandes/' + demandeId + '/scanner', { method: 'PUT' });
+      const res = await fetch('/api/demandes/' + demandeId + '/terminer', { method: 'PUT' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur');
-      showAlert('Dossier scanné avec succès', 'success');
+      showAlert('Dossier terminé avec succès', 'success');
       chargerDetail();
     } catch (e) {
       showAlert(e.message, 'error');
     }
+  }
+
+  // Fonctions Transfert
+  async function validerTransfert() {
+    if (!confirm('Valider cette demande de transfert ?')) return;
+    const res = await fetch(`/api/cartes-resident/transfert/${demandeId}/valider`, { method: 'PUT' });
+    if (res.ok) { showAlert('Transfert validé'); chargerDetail(); }
+    else showAlert('Erreur lors de la validation', 'error');
+  }
+  async function rejeterTransfert() {
+    if (!confirm('Rejeter cette demande de transfert ?')) return;
+    const res = await fetch(`/api/cartes-resident/transfert/${demandeId}/rejeter`, { method: 'PUT' });
+    if (res.ok) { showAlert('Transfert rejeté'); chargerDetail(); }
+    else showAlert('Erreur lors du rejet', 'error');
+  }
+  async function emettreTransfert() {
+    if (!confirm('Émettre la nouvelle carte suite au transfert ?')) return;
+    const res = await fetch(`/api/cartes-resident/transfert/${demandeId}/emettre`, { method: 'PUT' });
+    if (res.ok) { showAlert('Nouvelle carte émise avec succès'); chargerDetail(); }
+    else { const d = await res.json(); showAlert(d.error || 'Erreur', 'error'); }
+  }
+
+  // Fonctions Duplicata (similaire)
+  async function validerDuplicata() {
+    if (!confirm('Valider cette demande de duplicata ?')) return;
+    const res = await fetch(`/api/cartes-resident/duplicata/${demandeId}/valider`, { method: 'PUT' });
+    if (res.ok) { showAlert('Duplicata validé'); chargerDetail(); }
+  }
+  async function rejeterDuplicata() {
+    if (!confirm('Rejeter cette demande de duplicata ?')) return;
+    const res = await fetch(`/api/cartes-resident/duplicata/${demandeId}/rejeter`, { method: 'PUT' });
+    if (res.ok) { showAlert('Duplicata rejeté'); chargerDetail(); }
+  }
+  async function emettreDuplicata() {
+    if (!confirm('Émettre le duplicata ?')) return;
+    const res = await fetch(`/api/cartes-resident/duplicata/${demandeId}/emettre`, { method: 'PUT' });
+    if (res.ok) { showAlert('Duplicata émis avec succès'); chargerDetail(); }
   }
 
   function showAlert(msg, type) {

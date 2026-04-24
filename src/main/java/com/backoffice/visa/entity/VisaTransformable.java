@@ -19,7 +19,7 @@ public class VisaTransformable {
     @JoinColumn(name = "id_passeport", nullable = false)
     private Passeport passeport;
 
-    @Column(name = "numero_reference", nullable = false, unique = true, length = 50)
+    @Column(name = "numero_reference", nullable = false, length = 50)
     private String numeroReference;
 
     @Column(nullable = false, length = 100)

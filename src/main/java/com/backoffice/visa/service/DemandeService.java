@@ -206,22 +206,45 @@ public class DemandeService {
     }
 
     /**
-     * Scanner le dossier (passe de "Dossier créé" à "Dossier scanné")
-     * Le dossier ne peut plus être modifié après scan
+     * Terminer le dossier (passe de "Dossier créé" à "Dossier terminé")
+     * Le dossier ne peut plus être modifié.
+     * Crée automatiquement la carte de résident.
      */
     @Transactional
-    public Demande scannerDossier(Long demandeId) {
+    public Demande terminerDossier(Long demandeId) {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
         if (demande.getStatut() != 1) {
-            throw new RuntimeException("Seul un dossier créé peut être scanné. Statut actuel : " + demande.getStatutLibelle());
+            throw new RuntimeException("Seul un dossier créé peut être terminé. Statut actuel : " + demande.getStatutLibelle());
         }
 
-        demande.setStatut(2); // Dossier scanné
+        demande.setStatut(2); // Dossier terminé
         demande.setDateTraitement(LocalDate.now());
         enregistrerChangementStatut(demande, 2);
-        return demandeRepository.save(demande);
+        demande = demandeRepository.save(demande);
+
+        // Créer automatiquement la carte de résident
+        CarteResident cr = new CarteResident();
+        cr.setDemande(demande);
+        LocalDate dateFinCR = LocalDate.now().plusYears(10);
+        
+        if (demande.getVisaTransformable() != null && demande.getVisaTransformable().getPasseport() != null) {
+            cr.setPasseport(demande.getVisaTransformable().getPasseport());
+            LocalDate dateFinPasseport = demande.getVisaTransformable().getPasseport().getDateExpiration();
+            if (dateFinPasseport != null && dateFinCR.isAfter(dateFinPasseport)) {
+                dateFinCR = dateFinPasseport;
+            }
+        } else {
+            throw new RuntimeException("Impossible de créer la carte de résident : Passeport introuvable");
+        }
+        
+        cr.setDateDebut(LocalDate.now());
+        cr.setDateFin(dateFinCR);
+        cr.setReference("CR-" + demande.getId() + "-" + LocalDate.now().getYear());
+        carteResidentRepository.save(cr);
+
+        return demande;
     }
 
     /**
@@ -253,6 +276,18 @@ public class DemandeService {
             return false;
         }
         return demandeRepository.existsByVisaTransformableNumeroReference(numeroNormalise);
+    }
+
+    /**
+     * Créer une demande déjà terminée (pour le cas de duplicata sans données antérieures)
+     */
+    @Transactional
+    public Demande creerDossierTermine(DemandeFormDTO form) {
+        // On réutilise la création de base
+        Demande demande = creerDemande(form);
+        
+        // On la termine immédiatement
+        return terminerDossier(demande.getId());
     }
 
     private String normaliserNumero(String numero) {

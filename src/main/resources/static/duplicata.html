@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Duplicata Carte de Résident — Back Office Visa</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.4em; }
+    .header nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 600; opacity: 0.85; transition: opacity 0.2s; }
+    .header nav a:hover { opacity: 1; }
+    .container { max-width: 850px; margin: 30px auto; padding: 0 20px; }
+
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 20px; }
+    .card h2 { color: #1a5276; margin-bottom: 20px; font-size: 1.2em; border-bottom: 2px solid #ebf5fb; padding-bottom: 10px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 15px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-weight: 600; margin-bottom: 5px; font-size: 0.9em; color: #555; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 10px 12px; border: 1.5px solid #dcdde1; border-radius: 6px; font-size: 0.95em;
+    }
+    .form-group input:focus { outline: none; border-color: #2980b9; }
+
+    .btn { padding: 12px 28px; border: none; border-radius: 6px; font-size: 0.95em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #2980b9; color: #fff; }
+    .btn-secondary { background: #95a5a6; color: #fff; }
+    .btn-success { background: #27ae60; color: #fff; }
+
+    .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500; display: none; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-box input { flex: 1; padding: 12px; border: 1.5px solid #dcdde1; border-radius: 6px; }
+
+    .result-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2980b9; }
+    .result-info p { margin-bottom: 5px; font-size: 0.95em; }
+    .result-info b { color: #1a5276; }
+
+    #form-duplicata { display: none; }
+    #case-2-section { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Back Office Visa — Madagascar</h1>
+  <nav>
+    <a href="index.html">Nouvelle demande</a>
+    <a href="demandes.html">Liste des demandes</a>
+    <a href="duplicata.html" style="opacity:1; border-bottom: 2px solid #fff; padding-bottom: 3px;">Duplicata</a>
+    <a href="transfert.html">Transfert</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div id="alert" class="alert"></div>
+
+  <!-- Étape 1 : Recherche (Cas 1) -->
+  <div class="card" id="search-section">
+    <h2>Recherche du dossier / carte résident</h2>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+      Saisissez l'ID de la demande d'origine ou la référence de la carte de résident pour retrouver le dossier.
+    </p>
+    <div class="search-box">
+      <input type="text" id="search-critere" placeholder="Ex: 1 ou CR-1-2026" />
+      <button class="btn btn-primary" onclick="rechercher()">Rechercher</button>
+    </div>
+    <div id="search-result"></div>
+    
+    <div style="margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+      <p style="font-size: 0.9em; margin-bottom: 10px;">Le demandeur n'existe pas encore dans le système ?</p>
+      <button class="btn btn-secondary" onclick="afficherCas2()">Créer un dossier à partir de zéro (Cas 2)</button>
+    </div>
+  </div>
+
+  <!-- Étape 2 : Formulaire Duplicata (Cas 1) -->
+  <div class="card" id="form-duplicata">
+    <h2>Détails du Duplicata</h2>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Motif du duplicata</label>
+        <select id="motif" onchange="toggleDateDeclaration()">
+          <option value="Perte">Perte</option>
+          <option value="Vol">Vol</option>
+          <option value="Détérioration">Détérioration</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group" id="group-declaration">
+        <label id="label-declaration">Date de déclaration (Perte/Vol)</label>
+        <input type="date" id="dateDeclaration" />
+      </div>
+      <div class="form-group">
+        <label>Date de délivrance du duplicata</label>
+        <input type="date" id="dateDelivrance" />
+      </div>
+      <div class="form-group">
+        <label>Date d'expiration (Identique à l'originale)</label>
+        <input type="date" id="dateExpiration" disabled style="background: #f0f0f0; cursor: not-allowed;" />
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top: 20px; display: flex; justify-content: space-between;">
+      <button class="btn btn-secondary" onclick="annulerForm()">Annuler</button>
+      <button class="btn btn-success" onclick="soumettreDuplicata()">Enregistrer la demande de duplicata</button>
+    </div>
+  </div>
+
+  <!-- Cas 2 : Création complète -->
+  <div class="card" id="case-2-section">
+    <h2>Création Dossier Antérieur (Cas 2)</h2>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
+      Ce formulaire permet de créer un demandeur, son passeport et une demande terminée en une seule étape.
+    </p>
+    <!-- On pourrait réutiliser le formulaire d'index.html mais on va faire simple ici pour le test -->
+    <div class="form-grid" id="form-case-2">
+      <div class="form-group">
+        <label>Nom</label>
+        <input type="text" id="c2-nom" placeholder="Ex: DOE" />
+      </div>
+      <div class="form-group">
+        <label>Prénom</label>
+        <input type="text" id="c2-prenom" placeholder="Ex: John" />
+      </div>
+      <div class="form-group">
+        <label>Date de Naissance</label>
+        <input type="date" id="c2-dob" />
+      </div>
+      <div class="form-group">
+        <label>Lieu de Naissance</label>
+        <input type="text" id="c2-lieu-naissance" placeholder="Ex: Paris" />
+      </div>
+      <div class="form-group">
+        <label>Nationalité</label>
+        <select id="c2-idNationalite"></select>
+      </div>
+      <div class="form-group">
+        <label>Situation Familiale</label>
+        <select id="c2-idSituationFamiliale"></select>
+      </div>
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input type="text" id="c2-telephone" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="c2-email" />
+      </div>
+      <div class="form-group full">
+        <label>Adresse</label>
+        <input type="text" id="c2-adresse" />
+      </div>
+
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Informations Passeport</h3>
+      <div class="form-group">
+        <label>Numéro Passeport</label>
+        <input type="text" id="c2-numeroPasseport" />
+      </div>
+      <div class="form-group">
+        <label>Pays de délivrance</label>
+        <input type="text" id="c2-paysDelivrance" value="Madagascar" />
+      </div>
+      <div class="form-group">
+        <label>Date de délivrance</label>
+        <input type="date" id="c2-dateDelivrancePasseport" />
+      </div>
+      <div class="form-group">
+        <label>Date d'expiration</label>
+        <input type="date" id="c2-dateExpirationPasseport" />
+      </div>
+
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Informations Visa Transformable</h3>
+      <div class="form-group">
+        <label>Type de Visa</label>
+        <select id="c2-idTypeVisa" onchange="chargerPiecesSpecifiques()"></select>
+      </div>
+      <div class="form-group">
+        <label>Référence Visa</label>
+        <input type="text" id="c2-numeroReferenceVisa" />
+      </div>
+      <div class="form-group">
+        <label>Lieu de délivrance</label>
+        <input type="text" id="c2-lieuVisa" />
+      </div>
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" id="c2-dateDebutVisa" />
+      </div>
+      <div class="form-group">
+        <label>Date de fin</label>
+        <input type="date" id="c2-dateFinVisa" />
+      </div>
+
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Pièces Justificatives (Toutes obligatoires pour le Cas 2)</h3>
+      <div id="c2-pieces-communes" class="form-group full" style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+        <p style="font-size: 0.85em; color: #666;">Chargement des pièces communes...</p>
+      </div>
+      <div id="c2-pieces-specifiques" class="form-group full" style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+        <p style="font-size: 0.85em; color: #666;">Veuillez choisir un type de visa</p>
+      </div>
+    </div>
+    <div class="btn-row" style="margin-top: 20px; display: flex; justify-content: space-between;">
+      <button class="btn btn-secondary" onclick="location.reload()">Retour</button>
+      <button class="btn btn-primary" onclick="creerDossierTermine()">Créer le dossier et passer au duplicata</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentDemandeOrigine = null;
+  let currentCarteOrigine = null;
+  let refData = {
+    nationalites: [],
+    situations: [],
+    typesVisa: [],
+    piecesCommunes: [],
+    piecesSpecifiques: []
+  };
+
+  // Charger les données de référence au démarrage
+  async function chargerDonneesReference() {
+    try {
+      const [natRes, sitRes, visaRes, pcRes] = await Promise.all([
+        fetch('/api/references/nationalites'),
+        fetch('/api/references/situations-familiales'),
+        fetch('/api/references/types-visa'),
+        fetch('/api/references/pieces-communes')
+      ]);
+
+      refData.nationalites = await natRes.json();
+      refData.situations = await sitRes.json();
+      refData.typesVisa = await visaRes.json();
+      refData.piecesCommunes = await pcRes.json();
+
+      remplirSelect('c2-idNationalite', refData.nationalites);
+      remplirSelect('c2-idSituationFamiliale', refData.situations);
+      remplirSelect('c2-idTypeVisa', refData.typesVisa);
+      
+      afficherPiecesCommunes();
+    } catch (e) {
+      console.error("Erreur lors du chargement des références", e);
+    }
+  }
+
+  function remplirSelect(id, data) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">Choisir...</option>';
+    data.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.libelle;
+      sel.appendChild(opt);
+    });
+  }
+
+  function afficherPiecesCommunes() {
+    const container = document.getElementById('c2-pieces-communes');
+    container.innerHTML = '<p style="font-weight:600; font-size:0.85em; margin-bottom:5px;">Pièces communes :</p>';
+    refData.piecesCommunes.forEach(p => {
+      container.innerHTML += `
+        <div style="font-size:0.85em; margin-bottom:3px;">
+          <input type="checkbox" id="c2-pc-${p.id}" checked disabled /> 
+          <label>${p.libelle} (Auto)</label>
+        </div>
+      `;
+    });
+  }
+
+  async function chargerPiecesSpecifiques() {
+    const typeVisaId = document.getElementById('c2-idTypeVisa').value;
+    const container = document.getElementById('c2-pieces-specifiques');
+    if (!typeVisaId) {
+      container.innerHTML = '<p style="font-size: 0.85em; color: #666;">Veuillez choisir un type de visa</p>';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/references/pieces-specifiques/' + typeVisaId);
+      refData.piecesSpecifiques = await res.json();
+      container.innerHTML = '<p style="font-weight:600; font-size:0.85em; margin-bottom:5px;">Pièces spécifiques :</p>';
+      if (refData.piecesSpecifiques.length === 0) {
+        container.innerHTML += '<p style="font-size:0.85em; color:#666;">Aucune pièce spécifique pour ce type.</p>';
+      }
+      refData.piecesSpecifiques.forEach(p => {
+        container.innerHTML += `
+          <div style="font-size:0.85em; margin-bottom:3px;">
+            <input type="checkbox" id="c2-ps-${p.id}" checked disabled /> 
+            <label>${p.libelle} (Auto)</label>
+          </div>
+        `;
+      });
+    } catch (e) {
+      container.innerHTML = '<p style="color:red">Erreur chargement pièces</p>';
+    }
+  }
+
+  function showAlert(msg, type='success') {
+    const alert = document.getElementById('alert');
+    alert.textContent = msg;
+    alert.className = `alert alert-${type}`;
+    alert.style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  async function rechercher() {
+    const critere = document.getElementById('search-critere').value;
+    if (!critere) return;
+
+    try {
+      const resp = await fetch(`/api/cartes-resident/duplicata/recherche?critere=${critere}`);
+      if (resp.ok) {
+        const result = await resp.json();
+        currentDemandeOrigine = result.demande;
+        currentCarteOrigine = result.carte;
+        afficherResultatRecherche(result.demande, result.carte);
+      } else {
+        showAlert("Aucun dossier éligible trouvé pour ce critère (Dossier doit être terminé et carte non expirée).", "error");
+        document.getElementById('search-result').innerHTML = '';
+      }
+    } catch (e) {
+      showAlert("Erreur lors de la recherche", "error");
+    }
+  }
+
+  function afficherResultatRecherche(d, c) {
+    const resDiv = document.getElementById('search-result');
+    resDiv.innerHTML = `
+      <div class="result-info">
+        <p><b>Demandeur :</b> ${d.demandeur.nom} ${d.demandeur.prenom}</p>
+        <p><b>Passeport :</b> ${d.visaTransformable.passeport.numeroPasseport}</p>
+        <p><b>Type de visa :</b> ${d.typeVisa.libelle}</p>
+        <p><b>Statut actuel :</b> ${d.statutLibelle}</p>
+        <p><b>Carte Actuelle :</b> ${c ? c.reference : 'Inconnue'} (Expire le : ${c ? c.dateFin : 'N/A'})</p>
+        <button class="btn btn-success" style="margin-top:10px; width:100%" onclick="ouvrirFormDuplicata()">Choisir ce dossier pour le duplicata</button>
+      </div>
+    `;
+  }
+
+  function toggleDateDeclaration() {
+    const motif = document.getElementById('motif').value;
+    const group = document.getElementById('group-declaration');
+    const label = document.getElementById('label-declaration');
+    const input = document.getElementById('dateDeclaration');
+    
+    if (motif === 'Perte' || motif === 'Vol') {
+      group.style.display = 'flex';
+      label.innerHTML = `Date de déclaration (${motif}) <span style="color:red">*</span>`;
+      input.required = true;
+    } else {
+      group.style.display = 'none';
+      input.required = false;
+      input.value = '';
+    }
+  }
+
+  function ouvrirFormDuplicata() {
+    document.getElementById('search-section').style.display = 'none';
+    document.getElementById('form-duplicata').style.display = 'block';
+    
+    // Valeurs par défaut
+    document.getElementById('dateDelivrance').valueAsDate = new Date();
+    
+    // RÈGLE : La date d'expiration est fixée à celle de la carte d'origine
+    if (currentCarteOrigine) {
+      document.getElementById('dateExpiration').value = currentCarteOrigine.dateFin;
+    }
+
+    // Appel initial pour cacher/montrer la date de déclaration
+    toggleDateDeclaration();
+  }
+
+  function annulerForm() {
+    document.getElementById('form-duplicata').style.display = 'none';
+    document.getElementById('search-section').style.display = 'block';
+  }
+
+  async function soumettreDuplicata() {
+    const payload = {
+      idDemandeOrigine: currentDemandeOrigine.id,
+      motif: document.getElementById('motif').value,
+      dateDeclaration: document.getElementById('dateDeclaration').value,
+      dateDelivranceDuplicata: document.getElementById('dateDelivrance').value,
+      dateExpirationDuplicata: document.getElementById('dateExpiration').value
+    };
+
+    try {
+      const resp = await fetch('/api/cartes-resident/duplicata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        showAlert("Demande de duplicata créée avec succès ! Vous pouvez maintenant la valider dans la liste des demandes.");
+        setTimeout(() => window.location.href = 'demandes.html', 2000);
+      } else {
+        const err = await resp.json();
+        showAlert("Erreur : " + (err.error || "Impossible de créer la demande"), "error");
+      }
+    } catch (e) {
+      showAlert("Erreur lors de la soumission", "error");
+    }
+  }
+
+  function afficherCas2() {
+    document.getElementById('search-section').style.display = 'none';
+    document.getElementById('case-2-section').style.display = 'block';
+  }
+
+  async function creerDossierTermine() {
+    const v = (id) => document.getElementById(id).value;
+    
+    // On force toutes les pièces car c'est une création de dossier "antérieur"
+    const piecesCommunesPresentes = refData.piecesCommunes.map(p => p.id);
+    const piecesSpecifiquesPresentes = refData.piecesSpecifiques.map(p => p.id);
+
+    const payload = {
+      nom: v('c2-nom'),
+      prenom: v('c2-prenom'),
+      dateNaissance: v('c2-dob'),
+      lieuNaissance: v('c2-lieu-naissance'),
+      telephone: v('c2-telephone'),
+      email: v('c2-email'),
+      adresse: v('c2-adresse'),
+      idNationalite: parseInt(v('c2-idNationalite')),
+      idSituationFamiliale: parseInt(v('c2-idSituationFamiliale')),
+      numeroPasseport: v('c2-numeroPasseport'),
+      dateDelivrancePasseport: v('c2-dateDelivrancePasseport'),
+      dateExpirationPasseport: v('c2-dateExpirationPasseport'),
+      paysDelivrance: v('c2-paysDelivrance'),
+      idTypeVisa: parseInt(v('c2-idTypeVisa')),
+      idTypeDemande: 1, // Fixé à "Carte de Résident" pour ce workflow
+      numeroReferenceVisa: v('c2-numeroReferenceVisa'),
+      lieuVisa: v('c2-lieuVisa'),
+      dateDebutVisa: v('c2-dateDebutVisa'),
+      dateFinVisa: v('c2-dateFinVisa'),
+      piecesCommunesPresentes: piecesCommunesPresentes,
+      piecesSpecifiquesPresentes: piecesSpecifiquesPresentes
+    };
+
+    // Validation basique
+    if (!payload.nom || !payload.numeroPasseport || !payload.idTypeVisa || !payload.numeroReferenceVisa) {
+      showAlert("Veuillez remplir les champs obligatoires (Nom, Passeport, Type Visa, Référence Visa)", "error");
+      return;
+    }
+
+    try {
+      const resp = await fetch('/api/demandes/termines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (resp.ok) {
+        const d = await resp.json();
+        currentDemandeOrigine = d;
+        showAlert("Dossier antérieur créé avec succès ! Passage au formulaire de duplicata.");
+        setTimeout(() => {
+          document.getElementById('case-2-section').style.display = 'none';
+          ouvrirFormDuplicata();
+        }, 1500);
+      } else {
+        const err = await resp.json();
+        showAlert("Erreur : " + (err.error || "Impossible de créer le dossier"), "error");
+      }
+    } catch (e) {
+      showAlert("Erreur lors de la création", "error");
+    }
+  }
+
+  chargerDonneesReference();
+</script>
+
+</body>
+</html>
