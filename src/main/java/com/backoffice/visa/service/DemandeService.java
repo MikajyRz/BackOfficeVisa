@@ -192,13 +192,13 @@ public class DemandeService {
     private boolean verifierPiecesObligatoires(Long demandeId) {
         List<PieceDemande> piecesCommunes = pieceDemandeRepository.findByDemandeId(demandeId);
         for (PieceDemande p : piecesCommunes) {
-            if (p.getTypePieceCommune().getObligatoire() && !p.getPresente()) {
+            if (Boolean.TRUE.equals(p.getTypePieceCommune().getObligatoire()) && !Boolean.TRUE.equals(p.getPresente())) {
                 return false;
             }
         }
         List<PieceDemandeSpecifique> piecesSpec = pieceDemandeSpecifiqueRepository.findByDemandeId(demandeId);
         for (PieceDemandeSpecifique p : piecesSpec) {
-            if (p.getTypePieceSpecifique().getObligatoire() && !p.getPresente()) {
+            if (Boolean.TRUE.equals(p.getTypePieceSpecifique().getObligatoire()) && !Boolean.TRUE.equals(p.getPresente())) {
                 return false;
             }
         }
