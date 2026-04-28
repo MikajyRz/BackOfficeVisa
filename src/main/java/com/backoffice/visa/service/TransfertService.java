@@ -56,6 +56,10 @@ public class TransfertService {
                     .filter(p -> critere.equalsIgnoreCase(p.getNumeroPasseport()))
                     .flatMap(p -> demandeRepository.findByDemandeurId(p.getDemandeur().getId()).stream())
                     .filter(d -> d.getStatut() == Demande.STATUT_TERMINE)
+                    // On s'assure que la demande trouvée est bien celle liée au passeport recherché
+                    .filter(d -> d.getVisaTransformable() != null && 
+                                 d.getVisaTransformable().getPasseport() != null && 
+                                 critere.equalsIgnoreCase(d.getVisaTransformable().getPasseport().getNumeroPasseport()))
                     .sorted((d1, d2) -> d2.getId().compareTo(d1.getId()))
                     .findFirst();
         }
