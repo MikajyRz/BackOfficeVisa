@@ -689,7 +689,7 @@
   }
 
   async function scannerDossier() {
-    if (!confirm('Confirmer le scan ? Le dossier passera en statut "Scan terminé" et vous pourrez ensuite le valider définitivement.')) return;
+    if (!confirm('Confirmer le scan ? Le dossier passera en statut "Dossier scanné" et vous pourrez ensuite le valider définitivement.')) return;
     
     const btn = document.getElementById('btn-scanner');
     btn.disabled = true;

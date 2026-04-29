@@ -223,8 +223,8 @@ public class DemandeService {
             throw new RuntimeException("Toutes les pièces obligatoires doivent avoir un fichier importé avant de scanner.");
         }
 
-        demande.setStatut(3); // Scan terminé
-        enregistrerChangementStatut(demande, 3);
+        demande.setStatut(Demande.STATUT_SCANNE); // Nouveau statut 2
+        enregistrerChangementStatut(demande, Demande.STATUT_SCANNE);
         return demandeRepository.save(demande);
     }
 
@@ -255,13 +255,13 @@ public class DemandeService {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
-        if (demande.getStatut() != 3) {
-            throw new RuntimeException("Le dossier doit être au statut 'Scan terminé' avant d'être terminé. Statut actuel : " + demande.getStatutLibelle());
+        if (demande.getStatut() != Demande.STATUT_SCANNE) {
+            throw new RuntimeException("Le dossier doit être scanné avant d'être terminé. Statut actuel : " + demande.getStatutLibelle());
         }
 
-        demande.setStatut(2); // Dossier terminé
+        demande.setStatut(Demande.STATUT_TERMINE); // Nouveau statut 3
         demande.setDateTraitement(LocalDate.now());
-        enregistrerChangementStatut(demande, 2);
+        enregistrerChangementStatut(demande, Demande.STATUT_TERMINE);
         demande = demandeRepository.save(demande);
 
         // Créer automatiquement la carte de résident

@@ -232,8 +232,8 @@
       const badgeEl = document.getElementById('badge-statut');
       const statusMap = {
         1: { text: 'Dossier créé', class: 'badge-cree' },
-        2: { text: 'Dossier terminé', class: 'badge-termine' },
-        3: { text: 'Scan terminé', class: 'badge-termine' }, // Même style que terminé car c'est une étape avancée
+        2: { text: 'Dossier scanné', class: 'badge-termine' },
+        3: { text: 'Dossier terminé', class: 'badge-termine' },
         10: { text: 'Duplicata demandé', class: 'badge-cree' },
         11: { text: 'Duplicata validé', class: 'badge-termine' },
         12: { text: 'Duplicata rejeté', class: 'badge-no' },
@@ -256,8 +256,8 @@
       if (d.statut === 1) {
         // Au statut 1, on ne peut que aller vers l'import (déjà un gros bouton au milieu)
         // Mais on pourrait remettre un petit rappel ici si tu veux.
-      } else if (d.statut === 3) {
-        // Au statut 3 (Scan terminé), on peut enfin terminer le dossier
+      } else if (d.statut === 2) {
+        // Au statut 2 (Dossier scanné), on peut enfin terminer le dossier
         actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
       } else if (d.statut === 10) {
         actionsHtml += '<button class="btn btn-success" onclick="validerDuplicata()">Valider</button> ';

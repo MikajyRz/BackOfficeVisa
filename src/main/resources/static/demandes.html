@@ -104,8 +104,8 @@
       <select id="filter-statut" onchange="filtrerDemandes()">
         <option value="">Tous les statuts</option>
         <option value="1">Dossier créé</option>
-        <option value="3">Scan terminé</option>
-        <option value="2">Dossier terminé</option>
+        <option value="2">Dossier scanné</option>
+        <option value="3">Dossier terminé</option>
         <option value="10">Duplicata demandé</option>
         <option value="11">Duplicata validé</option>
         <option value="12">Duplicata rejeté</option>
@@ -180,7 +180,7 @@
       // Stats
       document.getElementById('stat-total').textContent = allDemandes.length;
       document.getElementById('stat-cree').textContent = allDemandes.filter(d => d.statut === 1).length;
-      document.getElementById('stat-termine').textContent = allDemandes.filter(d => d.statut === 2).length;
+      document.getElementById('stat-termine').textContent = allDemandes.filter(d => d.statut === 3).length;
 
       afficherDemandes(allDemandes);
     } catch (e) {
@@ -219,7 +219,7 @@
     tbody.innerHTML = demandes.map(d => {
       let actions = `<a class="btn btn-outline btn-sm" onclick="event.stopPropagation(); voirDetail(${d.id})">Voir</a> `;
       
-      if (d.statut === 3) {
+      if (d.statut === 2) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); terminerDossier(${d.id})">Terminer</button>`;
       } else if (d.statut === 10) {
         actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); validerDuplicata(${d.id})">Valider</button> `;

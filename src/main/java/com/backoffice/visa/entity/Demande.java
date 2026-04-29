@@ -23,8 +23,8 @@ public class Demande {
 
     // Constantes de statut
     public static final int STATUT_CREATION = 1;
-    public static final int STATUT_TERMINE = 2;
-    public static final int STATUT_SCANNE = 3;
+    public static final int STATUT_SCANNE = 2; // Changé de 3 à 2
+    public static final int STATUT_TERMINE = 3; // Changé de 2 à 3
     public static final int STATUT_DUPLICATA_DEMANDE = 10;
     public static final int STATUT_DUPLICATA_VALIDE = 11;
     public static final int STATUT_DUPLICATA_REJETE = 12;
@@ -71,8 +71,8 @@ public class Demande {
     public String getStatutLibelle() {
         return switch (statut) {
             case STATUT_CREATION -> "Dossier créé";
+            case STATUT_SCANNE -> "Dossier scanné";
             case STATUT_TERMINE -> "Dossier terminé";
-            case STATUT_SCANNE -> "Scan terminé";
             case STATUT_DUPLICATA_DEMANDE -> "Duplicata demandé";
             case STATUT_DUPLICATA_VALIDE -> "Duplicata validé";
             case STATUT_DUPLICATA_REJETE -> "Duplicata rejeté";
