@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pièces justificatives — Back Office Visa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a5276;
+      --primary-light: #2980b9;
+      --primary-lighter: #d6eaf8;
+      --primary-bg: #eaf2f8;
+      --success: #27ae60;
+      --success-light: #d4edda;
+      --danger: #e74c3c;
+      --danger-light: #fdecea;
+      --warning: #f39c12;
+      --warning-light: #fef9e7;
+      --gray-50: #f8f9fa;
+      --gray-100: #f0f2f5;
+      --gray-200: #e9ecef;
+      --gray-300: #dee2e6;
+      --gray-400: #ced4da;
+      --gray-500: #adb5bd;
+      --gray-600: #6c757d;
+      --gray-700: #495057;
+      --gray-800: #343a40;
+      --gray-900: #212529;
+      --radius: 12px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 12px rgba(26,82,118,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 { font-size: 1.2em; font-weight: 700; letter-spacing: -0.3px; }
+    .header nav { display: flex; gap: 6px; }
+    .header nav a {
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.88em;
+      padding: 6px 14px;
+      border-radius: 6px;
+      transition: var(--transition);
+    }
+    .header nav a:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* ─── Layout ─── */
+    .page-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 24px 60px;
+    }
+
+    /* ─── Breadcrumb ─── */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      font-size: 0.88em;
+      color: var(--gray-600);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+    .breadcrumb a:hover { color: var(--primary); text-decoration: underline; }
+    .breadcrumb .sep { color: var(--gray-400); }
+
+    /* ─── Page Header ─── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .page-header-left h2 {
+      font-size: 1.6em;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .page-header-left p {
+      color: var(--gray-600);
+      font-size: 0.92em;
+      line-height: 1.5;
+    }
+
+    /* ─── Stats bar ─── */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      flex: 1;
+      min-width: 140px;
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      text-align: center;
+      transition: var(--transition);
+    }
+    .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .stat-number {
+      font-size: 1.8em;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 0.78em;
+      color: var(--gray-600);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-total .stat-number { color: var(--primary); }
+    .stat-uploaded .stat-number { color: var(--success); }
+    .stat-pending .stat-number { color: var(--warning); }
+
+    /* ─── Section ─── */
+    .section {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-200);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .section-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--gray-50);
+    }
+    .section-header h3 {
+      font-size: 1em;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-header .count-badge {
+      background: var(--primary-lighter);
+      color: var(--primary);
+      font-size: 0.78em;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .section-body { padding: 8px 0; }
+
+    /* ─── Piece row ─── */
+    .piece-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--gray-100);
+      transition: var(--transition);
+    }
+    .piece-row:last-child { border-bottom: none; }
+    .piece-row:hover { background: var(--gray-50); }
+
+    .piece-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .piece-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.2em;
+    }
+    .piece-icon.has-file {
+      background: var(--success-light);
+    }
+    .piece-icon.no-file {
+      background: var(--gray-100);
+      border: 2px dashed var(--gray-300);
+    }
+
+    .piece-details { min-width: 0; }
+    .piece-name {
+      font-size: 0.92em;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .piece-meta {
+      font-size: 0.78em;
+      color: var(--gray-500);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .piece-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78em;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+    .piece-status.uploaded { background: var(--success-light); color: #155724; }
+    .piece-status.pending { background: var(--warning-light); color: #7d6608; }
+
+    .piece-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Thumbnail ─── */
+    .thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid var(--gray-200);
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .thumb:hover { border-color: var(--primary-light); transform: scale(1.08); box-shadow: var(--shadow); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ─── Buttons ─── */
+    .btn-upload-file {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.82em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-upload-file:hover { background: var(--primary-light); box-shadow: 0 4px 12px rgba(26,82,118,0.25); transform: translateY(-1px); }
+    .btn-upload-file:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-replace {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #fff;
+      color: var(--primary);
+      border: 1.5px solid var(--primary-lighter);
+      border-radius: 8px;
+      font-size: 0.82em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-replace:hover { background: var(--primary-lighter); border-color: var(--primary-light); }
+
+    .btn-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1.5px solid var(--gray-200);
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9em;
+      color: var(--gray-600);
+    }
+    .btn-icon:hover { border-color: var(--gray-400); background: var(--gray-50); }
+    .btn-icon.danger:hover { border-color: var(--danger); background: var(--danger-light); color: var(--danger); }
+    .btn-icon.view:hover { border-color: var(--primary-light); background: var(--primary-lighter); color: var(--primary); }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #fff;
+      color: var(--primary);
+      border: 1.5px solid var(--primary-lighter);
+      border-radius: 8px;
+      font-size: 0.88em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      font-family: inherit;
+    }
+    .btn-back:hover { background: var(--primary-lighter); border-color: var(--primary-light); }
+
+    /* ─── Upload spinner ─── */
+    .spinner-sm {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Toast notification ─── */
+    .toast-container {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .toast {
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 0.88em;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.3s ease;
+      max-width: 380px;
+      font-family: inherit;
+    }
+    .toast.success { background: #fff; border-left: 4px solid var(--success); color: var(--gray-800); }
+    .toast.error { background: #fff; border-left: 4px solid var(--danger); color: var(--gray-800); }
+    .toast-icon { font-size: 1.15em; flex-shrink: 0; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* ─── Modal ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 300;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-overlay img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: var(--radius);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: zoomIn 0.25s ease;
+    }
+    .modal-close {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-size: 1.3em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.3); }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ─── Empty state ─── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray-500);
+    }
+    .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { font-size: 0.9em; }
+
+    /* ─── Progress ring for upload ─── */
+    .upload-progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: var(--primary-light);
+      border-radius: 0 0 var(--radius) var(--radius);
+      transition: width 0.3s ease;
+      width: 0;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 700px) {
+      .header { padding: 0 16px; }
+      .header nav { display: none; }
+      .page-container { padding: 20px 16px 40px; }
+      .page-header-left h2 { font-size: 1.3em; }
+      .stats-bar { gap: 10px; }
+      .stat-card { padding: 14px 12px; }
+      .piece-row { grid-template-columns: 1fr; gap: 12px; }
+      .piece-actions { justify-content: flex-start; }
+      .piece-name { white-space: normal; }
+    }
+    
+    /* ─── Bouton SCAN Flashy ─── */
+    .btn-scan-premium {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 40px;
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.1em;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 25px rgba(243, 156, 18, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-scan-premium:not(:disabled):hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 15px 30px rgba(243, 156, 18, 0.5);
+      background: linear-gradient(135deg, #f1c40f, #f39c12);
+    }
+    .btn-scan-premium:disabled {
+      background: #ccc;
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .btn-scan-premium.pulse:not(:disabled) {
+      animation: pulse-orange 2s infinite;
+    }
+    @keyframes pulse-orange {
+      0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(243, 156, 18, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Back Office Visa — Madagascar</h1>
+  <nav>
+    <a href="index.html">Nouvelle demande</a>
+    <a href="demandes.html">Liste des demandes</a>
+    <a href="duplicata.html">Duplicata</a>
+    <a href="transfert.html">Transfert</a>
+  </nav>
+</div>
+
+<!-- Content -->
+<div class="page-container">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="demandes.html">Demandes</a>
+    <span class="sep">›</span>
+    <a id="bc-detail" href="#">Demande #—</a>
+    <span class="sep">›</span>
+    <span>Pièces justificatives</span>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h2 id="page-title">Pièces justificatives</h2>
+      <p>Importez les documents nécessaires pour compléter le dossier de demande.</p>
+    </div>
+    <a class="btn-back" id="btn-retour" href="#">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Retour au dossier
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card stat-total">
+      <div class="stat-number" id="stat-total">0</div>
+      <div class="stat-label">Total pièces</div>
+    </div>
+    <div class="stat-card stat-uploaded">
+      <div class="stat-number" id="stat-uploaded">0</div>
+      <div class="stat-label">Importées</div>
+    </div>
+    <div class="stat-card stat-pending">
+      <div class="stat-number" id="stat-pending">0</div>
+      <div class="stat-label">En attente</div>
+    </div>
+  </div>
+
+  <!-- Pièces communes -->
+  <div class="section" id="section-communes">
+    <div class="section-header">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Pièces communes
+        <span class="count-badge" id="count-communes">0</span>
+      </h3>
+    </div>
+    <div class="section-body" id="list-communes"></div>
+  </div>
+
+  <!-- Pièces spécifiques -->
+  <div class="section" id="section-specifiques" style="display:none;">
+    <div class="section-header">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        Pièces spécifiques au visa
+        <span class="count-badge" id="count-specifiques">0</span>
+      </h3>
+    </div>
+    <div class="section-body" id="list-specifiques"></div>
+  </div>
+
+  <!-- Bouton Scanner -->
+  <div style="margin-top: 60px; text-align: center; border-top: 2px solid var(--gray-200); padding-top: 40px; padding-bottom: 20px;">
+    <button class="btn-scan-premium pulse" id="btn-scanner" onclick="scannerDossier()" disabled>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      Scanner le dossier maintenant
+    </button>
+    <div id="txt-scanner-info" style="margin-top: 15px; padding: 12px; border-radius: 8px; background: var(--danger-light); color: var(--danger); font-size: 0.9em; font-weight: 500; display: inline-block;">
+      ⚠️ Veuillez importer toutes les pièces obligatoires pour débloquer le scan.
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Image modal -->
+<div class="modal-overlay" id="image-modal">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img id="modal-image" src="" alt="Pièce justificative" />
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const demandeId = params.get('id');
+
+  if (!demandeId) { window.location.href = 'demandes.html'; }
+
+  // Set breadcrumb + back links
+  document.getElementById('bc-detail').href = 'detail.html?id=' + demandeId;
+  document.getElementById('bc-detail').textContent = 'Demande #' + demandeId;
+  document.getElementById('btn-retour').href = 'detail.html?id=' + demandeId;
+
+  // ─── Toast ───
+  function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    const icon = type === 'success' ? '✓' : '✕';
+    toast.innerHTML = '<span class="toast-icon">' + icon + '</span>' + message;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  // ─── Modal ───
+  function openModal(src) {
+    document.getElementById('modal-image').src = src;
+    document.getElementById('image-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    document.getElementById('image-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('image-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // ─── Upload handlers ───
+  function triggerUpload(type, pieceId) {
+    const input = document.getElementById('input-' + type + '-' + pieceId);
+    if (input) input.click();
+  }
+
+  async function handleUpload(type, pieceId, inputEl) {
+    const file = inputEl.files[0];
+    if (!file) return;
+
+    const endpoint = type === 'commune'
+      ? '/api/pieces/communes/' + pieceId + '/upload'
+      : '/api/pieces/specifiques/' + pieceId + '/upload';
+
+    const btn = document.getElementById('btn-' + type + '-' + pieceId);
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-sm"></span>';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(endpoint, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'upload');
+      showToast('Document importé avec succès');
+      await chargerPieces();
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }
+  }
+
+  async function scannerDossier() {
+    if (!confirm('Confirmer le scan ? Le dossier passera en statut "Scan terminé" et vous pourrez ensuite le valider définitivement.')) return;
+    
+    const btn = document.getElementById('btn-scanner');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-sm"></span> Traitement...';
+
+    try {
+      const res = await fetch(`/api/demandes/${demandeId}/scanner`, { method: 'PUT' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors du scan');
+      
+      showToast('✅ Dossier scanné avec succès !');
+      setTimeout(() => {
+        window.location.href = 'detail.html?id=' + demandeId;
+      }, 1500);
+    } catch (e) {
+      showToast(e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Scanner le dossier';
+    }
+  }
+
+  async function handleDelete(type, pieceId) {
+    if (!confirm('Voulez-vous vraiment supprimer ce document ?')) return;
+
+    const endpoint = type === 'commune'
+      ? '/api/pieces/communes/' + pieceId + '/fichier'
+      : '/api/pieces/specifiques/' + pieceId + '/fichier';
+
+    try {
+      const res = await fetch(endpoint, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Document supprimé');
+        await chargerPieces();
+      }
+    } catch (e) {
+      showToast('Erreur lors de la suppression', 'error');
+    }
+  }
+
+  // ─── Render a piece row ───
+  function renderPieceRow(piece, type) {
+    const isCommune = type === 'commune';
+    const libelle = isCommune
+      ? (piece.typePieceCommune ? piece.typePieceCommune.libelle : 'Pièce inconnue')
+      : (piece.typePieceSpecifique ? piece.typePieceSpecifique.libelle : 'Pièce inconnue');
+    const hasFichier = piece.fichierPath && piece.fichierPath.length > 0;
+    const fichierUrl = hasFichier ? '/api/pieces/fichier/' + piece.fichierPath : '';
+    const obligatoire = isCommune
+      ? (piece.typePieceCommune ? piece.typePieceCommune.obligatoire : true)
+      : (piece.typePieceSpecifique ? piece.typePieceSpecifique.obligatoire : true);
+
+    let html = '<div class="piece-row">';
+
+    // Left side: icon + info
+    html += '<div class="piece-info">';
+
+    // Thumbnail or icon
+    if (hasFichier) {
+      html += '<div class="thumb" onclick="openModal(\'' + fichierUrl + '\')">';
+      html += '<img src="' + fichierUrl + '" alt="' + libelle + '" />';
+      html += '</div>';
+    } else {
+      html += '<div class="piece-icon no-file">';
+      html += '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+      html += '</div>';
+    }
+
+    html += '<div class="piece-details">';
+    html += '<div class="piece-name" title="' + libelle + '">' + libelle + '</div>';
+    html += '<div class="piece-meta">';
+    if (hasFichier) {
+      html += '<span class="piece-status uploaded">Importé</span>';
+    } else {
+      html += '<span class="piece-status pending">En attente</span>';
+    }
+    if (obligatoire) {
+      html += '<span style="color:var(--danger); font-weight:600;">• Obligatoire</span>';
+    }
+    html += '</div>'; // piece-meta
+    html += '</div>'; // piece-details
+    html += '</div>'; // piece-info
+
+    // Right side: actions
+    html += '<div class="piece-actions">';
+
+    // Hidden file input
+    const inputId = 'input-' + type + '-' + piece.id;
+    html += '<input type="file" id="' + inputId + '" accept="image/*,.pdf" style="display:none" ';
+    html += 'onchange="handleUpload(\'' + type + '\', ' + piece.id + ', this)" />';
+
+    if (hasFichier) {
+      // View button
+      html += '<a class="btn-icon view" href="' + fichierUrl + '" target="_blank" title="Ouvrir dans un nouvel onglet">';
+      html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      html += '</a>';
+
+      // Replace button
+      html += '<button class="btn-replace" id="btn-' + type + '-' + piece.id + '" onclick="triggerUpload(\'' + type + '\', ' + piece.id + ')">';
+      html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+      html += 'Remplacer';
+      html += '</button>';
+
+      // Delete button
+      html += '<button class="btn-icon danger" onclick="handleDelete(\'' + type + '\', ' + piece.id + ')" title="Supprimer">';
+      html += '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+      html += '</button>';
+    } else {
+      // Upload button
+      html += '<button class="btn-upload-file" id="btn-' + type + '-' + piece.id + '" onclick="triggerUpload(\'' + type + '\', ' + piece.id + ')">';
+      html += '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+      html += 'Importer';
+      html += '</button>';
+    }
+
+    html += '</div>'; // piece-actions
+    html += '</div>'; // piece-row
+
+    return html;
+  }
+
+  // ─── Load data ───
+  async function chargerPieces() {
+    try {
+      const [piecesRes, piecesSpecRes] = await Promise.all([
+        fetch('/api/demandes/' + demandeId + '/pieces'),
+        fetch('/api/demandes/' + demandeId + '/pieces-specifiques')
+      ]);
+
+      const pieces = piecesRes.ok ? await piecesRes.json() : [];
+      const piecesSpec = piecesSpecRes.ok ? await piecesSpecRes.json() : [];
+
+      // Update title
+      document.getElementById('page-title').textContent = 'Pièces justificatives — Demande #' + demandeId;
+      document.title = 'Pièces — Demande #' + demandeId + ' — Back Office Visa';
+
+      // Stats
+      const total = pieces.length + piecesSpec.length;
+      const uploaded = pieces.filter(p => p.fichierPath).length + piecesSpec.filter(p => p.fichierPath).length;
+      const pending = total - uploaded;
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-uploaded').textContent = uploaded;
+      document.getElementById('stat-pending').textContent = pending;
+
+      // Gestion du bouton Scanner
+      const btnScanner = document.getElementById('btn-scanner');
+      const txtScanner = document.getElementById('txt-scanner-info');
+      
+      if (pending === 0) {
+        btnScanner.disabled = false;
+        txtScanner.style.display = 'none';
+      } else {
+        btnScanner.disabled = true;
+        txtScanner.style.display = 'block';
+        txtScanner.textContent = `⚠️ Il reste ${pending} pièce(s) à importer avant de pouvoir scanner le dossier.`;
+      }
+
+      // Communes
+      const listCommunes = document.getElementById('list-communes');
+      document.getElementById('count-communes').textContent = pieces.length;
+      if (pieces.length > 0) {
+        listCommunes.innerHTML = pieces.map(p => renderPieceRow(p, 'commune')).join('');
+      } else {
+        listCommunes.innerHTML = '<div class="empty-state"><p>Aucune pièce commune enregistrée</p></div>';
+      }
+
+      // Spécifiques
+      const sectionSpec = document.getElementById('section-specifiques');
+      const listSpec = document.getElementById('list-specifiques');
+      document.getElementById('count-specifiques').textContent = piecesSpec.length;
+      if (piecesSpec.length > 0) {
+        sectionSpec.style.display = 'block';
+        listSpec.innerHTML = piecesSpec.map(p => renderPieceRow(p, 'specifique')).join('');
+      } else {
+        sectionSpec.style.display = 'none';
+      }
+
+    } catch (e) {
+      showToast('Erreur de chargement : ' + e.message, 'error');
+    }
+  }
+
+  chargerPieces();
+</script>
+</body>
+</html>

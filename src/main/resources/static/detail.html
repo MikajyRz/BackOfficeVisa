@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Détail Demande — Back Office Visa</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
@@ -46,6 +48,29 @@
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
+    .btn-import-pieces {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #1a5276, #2471a3);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(26, 82, 118, 0.3);
+    }
+    .btn-import-pieces:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 82, 118, 0.4);
+      background: linear-gradient(135deg, #1a6fa0, #2980b9);
+    }
+    .btn-import-pieces svg { flex-shrink: 0; }
+
     @media (max-width: 600px) {
       .info-grid { grid-template-columns: 1fr; }
       .header { flex-direction: column; gap: 10px; text-align: center; }
@@ -69,7 +94,17 @@
 
   <div class="top-bar">
     <h2 id="page-title">Détail de la demande</h2>
-    <div id="action-buttons"></div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+      <a class="btn btn-success" id="link-upload" href="#" style="display:flex; align-items:center; gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importer des pièces
+      </a>
+      <button class="btn btn-primary" onclick="genererPDF()" style="display:flex; align-items:center; gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter PDF
+      </button>
+      <div id="action-buttons" style="display: flex; gap: 10px; align-items: center;"></div>
+    </div>
   </div>
 
   <!-- Statut -->
@@ -89,6 +124,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- Informations personnelles -->
   <div class="card">
@@ -171,6 +207,9 @@
     window.location.href = 'demandes.html';
   }
 
+  // Lien vers la page d'upload
+  document.getElementById('link-upload').href = 'upload.html?id=' + demandeId;
+
   async function chargerDetail() {
     try {
       const [demandeRes, piecesRes, piecesSpecRes] = await Promise.all([
@@ -181,6 +220,7 @@
 
       if (!demandeRes.ok) throw new Error('Demande introuvable');
       const d = await demandeRes.json();
+      console.log("Données de la demande:", d);
       const pieces = piecesRes.ok ? await piecesRes.json() : [];
       const piecesSpec = piecesSpecRes.ok ? await piecesSpecRes.json() : [];
 
@@ -193,6 +233,7 @@
       const statusMap = {
         1: { text: 'Dossier créé', class: 'badge-cree' },
         2: { text: 'Dossier terminé', class: 'badge-termine' },
+        3: { text: 'Scan terminé', class: 'badge-termine' }, // Même style que terminé car c'est une étape avancée
         10: { text: 'Duplicata demandé', class: 'badge-cree' },
         11: { text: 'Duplicata validé', class: 'badge-termine' },
         12: { text: 'Duplicata rejeté', class: 'badge-no' },
@@ -213,6 +254,10 @@
       let actionsHtml = '<a class="btn btn-secondary" href="demandes.html">← Retour</a> ';
       
       if (d.statut === 1) {
+        // Au statut 1, on ne peut que aller vers l'import (déjà un gros bouton au milieu)
+        // Mais on pourrait remettre un petit rappel ici si tu veux.
+      } else if (d.statut === 3) {
+        // Au statut 3 (Scan terminé), on peut enfin terminer le dossier
         actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
       } else if (d.statut === 10) {
         actionsHtml += '<button class="btn btn-success" onclick="validerDuplicata()">Valider</button> ';
@@ -243,9 +288,6 @@
         } catch(e) {}
       }
 
-      // Détails spécifiques Duplicata (similaire si endpoint existe)
-      // if (d.statut >= 10 && d.statut <= 13) { ... }
-
       // Demandeur
       if (d.demandeur) {
         document.getElementById('d-nom').textContent = d.demandeur.nom || '-';
@@ -259,14 +301,30 @@
         document.getElementById('d-adresse').textContent = d.demandeur.adresse || '-';
       }
 
-      // Passeport — récupérer via le visa transformable ou séparément
+      // Passeport (Recherche plus large pour éviter le '-')
+      let numPasseport = '-';
+      let paysDelivrance = '-';
+      let dateDelivranceP = '-';
+      let dateExpirationP = '-';
+
       if (d.visaTransformable && d.visaTransformable.passeport) {
         const p = d.visaTransformable.passeport;
-        document.getElementById('d-num-passeport').textContent = p.numeroPasseport || '-';
-        document.getElementById('d-pays-delivrance').textContent = p.paysDelivrance || '-';
-        document.getElementById('d-date-delivrance').textContent = p.dateDelivrance || '-';
-        document.getElementById('d-date-expiration').textContent = p.dateExpiration || '-';
+        numPasseport = p.numeroPasseport || p.numero_passeport || p.numero || '-';
+        paysDelivrance = p.paysDelivrance || p.pays_delivrance || '-';
+        dateDelivranceP = p.dateDelivrance || p.date_delivrance || '-';
+        dateExpirationP = p.dateExpiration || p.date_expiration || '-';
+      } else if (d.demandeur && d.demandeur.passeports && d.demandeur.passeports.length > 0) {
+        const p = d.demandeur.passeports[d.demandeur.passeports.length - 1];
+        numPasseport = p.numeroPasseport || p.numero_passeport || p.numero || '-';
+        paysDelivrance = p.paysDelivrance || p.pays_delivrance || '-';
+        dateDelivranceP = p.dateDelivrance || p.date_delivrance || '-';
+        dateExpirationP = p.dateExpiration || p.date_expiration || '-';
       }
+
+      document.getElementById('d-num-passeport').textContent = numPasseport;
+      document.getElementById('d-pays-delivrance').textContent = paysDelivrance;
+      document.getElementById('d-date-delivrance').textContent = dateDelivranceP;
+      document.getElementById('d-date-expiration').textContent = dateExpirationP;
 
       // Demande
       document.getElementById('d-type-demande').textContent = d.typeDemande ? d.typeDemande.libelle : '-';
@@ -287,16 +345,24 @@
       let piecesHtml = '';
       pieces.forEach(p => {
         const libelle = p.typePieceCommune ? p.typePieceCommune.libelle : 'Pièce inconnue';
+        const hasFichier = p.fichierPath && p.fichierPath.length > 0;
         piecesHtml += `<li>
           <span>${libelle}</span>
-          <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          <span>
+            ${hasFichier ? '<a href="/api/pieces/fichier/' + p.fichierPath + '" target="_blank" style="color:#2980b9; text-decoration:none; margin-right:8px;" title="Voir le fichier">📎</a>' : ''}
+            <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          </span>
         </li>`;
       });
       piecesSpec.forEach(p => {
         const libelle = p.typePieceSpecifique ? p.typePieceSpecifique.libelle : 'Pièce inconnue';
+        const hasFichier = p.fichierPath && p.fichierPath.length > 0;
         piecesHtml += `<li>
           <span>${libelle}</span>
-          <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          <span>
+            ${hasFichier ? '<a href="/api/pieces/fichier/' + p.fichierPath + '" target="_blank" style="color:#2980b9; text-decoration:none; margin-right:8px;" title="Voir le fichier">📎</a>' : ''}
+            <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          </span>
         </li>`;
       });
       if (!piecesHtml) piecesHtml = '<li style="color:#999;">Aucune pièce enregistrée</li>';
@@ -340,7 +406,7 @@
     else { const d = await res.json(); showAlert(d.error || 'Erreur', 'error'); }
   }
 
-  // Fonctions Duplicata (similaire)
+  // Fonctions Duplicata
   async function validerDuplicata() {
     if (!confirm('Valider cette demande de duplicata ?')) return;
     const res = await fetch(`/api/cartes-resident/duplicata/${demandeId}/valider`, { method: 'PUT' });
@@ -357,11 +423,85 @@
     if (res.ok) { showAlert('Duplicata émis avec succès'); chargerDetail(); }
   }
 
+  function genererPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const d = document;
+    
+    // Header Style
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("REPUBLIQUE DE MADAGASCAR", 105, 15, { align: "center" });
+    doc.text("Fitiavana - Tanindrazana - Fandrosoana", 105, 20, { align: "center" });
+    doc.setDrawColor(26, 82, 118);
+    doc.line(70, 22, 140, 22);
+
+    doc.setFontSize(16);
+    doc.setTextColor(26, 82, 118);
+    doc.text("FICHE RÉCAPITULATIVE DE DEMANDE", 105, 35, { align: "center" });
+    doc.setFontSize(12);
+    doc.text("Numéro de dossier : " + demandeId, 105, 42, { align: "center" });
+
+    // Infos Personnelles
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.autoTable({
+        startY: 55,
+        head: [['Sujet', 'Informations personnelles']],
+        body: [
+            ['Nom complet', d.getElementById('d-nom').textContent + " " + d.getElementById('d-prenom').textContent],
+            ['Date & Lieu de Naissance', d.getElementById('d-date-naissance').textContent + " à " + d.getElementById('d-lieu-naissance').textContent],
+            ['Nationalité', d.getElementById('d-nationalite').textContent],
+            ['Situation familiale', d.getElementById('d-situation').textContent],
+            ['Contact', d.getElementById('d-telephone').textContent + " / " + d.getElementById('d-email').textContent],
+            ['Adresse', d.getElementById('d-adresse').textContent]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [26, 82, 118] }
+    });
+
+    // Passeport
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Champ', 'Détails du Passeport']],
+        body: [
+            ['Numéro de Passeport', d.getElementById('d-num-passeport').textContent],
+            ['Pays de délivrance', d.getElementById('d-pays-delivrance').textContent],
+            ['Période de validité', d.getElementById('d-date-delivrance').textContent + " au " + d.getElementById('d-date-expiration').textContent]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    // Demande
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Champ', 'Détails de la Demande']],
+        body: [
+            ['Type de demande', d.getElementById('d-type-demande').textContent],
+            ['Type de visa', d.getElementById('d-type-visa').textContent],
+            ['Référence Visa', d.getElementById('d-vt-reference').textContent],
+            ['Statut Actuel', d.getElementById('badge-statut').textContent]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [39, 174, 96] }
+    });
+
+    // Pied de page
+    const dateNow = new Date().toLocaleDateString('fr-FR');
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text("Généré le " + dateNow + " par le système Back Office Visa", 105, 285, { align: "center" });
+
+    doc.save("Demande_Visa_" + demandeId + ".pdf");
+  }
+
   function showAlert(msg, type) {
     const el = document.getElementById('alert');
     el.textContent = msg;
     el.className = 'alert alert-' + type;
     el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
   }
 
   chargerDetail();

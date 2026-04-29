@@ -174,6 +174,21 @@ CREATE TABLE carte_resident (
     FOREIGN KEY (id_passeport) REFERENCES Passeport(id)
 );
 
+CREATE TABLE Historique_passeport_visa (
+    id SERIAL PRIMARY KEY,
+    id_visa_transformable INT NOT NULL,
+    id_ancien_passeport INT,
+    id_nouveau_passeport INT NOT NULL,
+    date_transfert DATE NOT NULL,
+    FOREIGN KEY (id_visa_transformable) REFERENCES Visa_transformable(id),
+    FOREIGN KEY (id_ancien_passeport) REFERENCES Passeport(id),
+    FOREIGN KEY (id_nouveau_passeport) REFERENCES Passeport(id)
+);
+
+-- Index pour les recherches fréquentes
+CREATE INDEX idx_demande_statut ON Demande(id_statut);
+CREATE INDEX idx_demande_demandeur ON Demande(id_demandeur);
+
 -- =============================================
 -- DONNÉES DE RÉFÉRENCE
 -- =============================================
@@ -200,3 +215,5 @@ INSERT INTO Type_piece_specifique (libelle, id_type_visa, obligatoire) VALUES
 ('Carte fiscale', 1, TRUE),
 ('Contrat de travail', 2, TRUE),
 ('Autorisation de travail', 2, TRUE);
+
+

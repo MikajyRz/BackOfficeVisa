@@ -104,6 +104,7 @@
       <select id="filter-statut" onchange="filtrerDemandes()">
         <option value="">Tous les statuts</option>
         <option value="1">Dossier créé</option>
+        <option value="3">Scan terminé</option>
         <option value="2">Dossier terminé</option>
         <option value="10">Duplicata demandé</option>
         <option value="11">Duplicata validé</option>
@@ -191,6 +192,7 @@
     switch(statut) {
       case 1: return 'badge-cree';
       case 2: return 'badge-termine';
+      case 3: return 'badge-termine';
       case 10: return 'badge-duplicata-demande';
       case 11: return 'badge-duplicata-valide';
       case 12: return 'badge-duplicata-rejete';
@@ -217,7 +219,7 @@
     tbody.innerHTML = demandes.map(d => {
       let actions = `<a class="btn btn-outline btn-sm" onclick="event.stopPropagation(); voirDetail(${d.id})">Voir</a> `;
       
-      if (d.statut === 1) {
+      if (d.statut === 3) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); terminerDossier(${d.id})">Terminer</button>`;
       } else if (d.statut === 10) {
         actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); validerDuplicata(${d.id})">Valider</button> `;
