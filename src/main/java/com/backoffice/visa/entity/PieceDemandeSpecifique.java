@@ -25,6 +25,9 @@ public class PieceDemandeSpecifique {
     @Column(nullable = false)
     private Boolean presente = false;
 
+    @Column(name = "fichier_path")
+    private String fichierPath;
+
     public PieceDemandeSpecifique() {}
 
     public Long getId() { return id; }
@@ -35,4 +38,6 @@ public class PieceDemandeSpecifique {
     public void setTypePieceSpecifique(TypePieceSpecifique typePieceSpecifique) { this.typePieceSpecifique = typePieceSpecifique; }
     public Boolean getPresente() { return presente; }
     public void setPresente(Boolean presente) { this.presente = presente; }
+    public String getFichierPath() { return fichierPath; }
+    public void setFichierPath(String fichierPath) { this.fichierPath = fichierPath; }
 }

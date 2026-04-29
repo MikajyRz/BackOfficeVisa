@@ -58,8 +58,22 @@ public class DemandeController {
         }
     }
 
+    @PutMapping("/{id}/scanner")
+    public ResponseEntity<?> scannerDossier(@PathVariable("id") Long id) {
+        try {
+            Demande demande = demandeService.scannerDossier(id);
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", demande.getId());
+            response.put("statut", demande.getStatutLibelle());
+            response.put("message", "Le scan du dossier est terminé.");
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PutMapping("/{id}/terminer")
-    public ResponseEntity<?> terminerDossier(@PathVariable Long id) {
+    public ResponseEntity<?> terminerDossier(@PathVariable("id") Long id) {
         try {
             Demande demande = demandeService.terminerDossier(id);
             Map<String, Object> response = new HashMap<>();
@@ -78,7 +92,7 @@ public class DemandeController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getDemande(@PathVariable Long id) {
+    public ResponseEntity<?> getDemande(@PathVariable("id") Long id) {
         try {
             return ResponseEntity.ok(demandeService.getDemandeById(id));
         } catch (RuntimeException e) {
@@ -87,29 +101,29 @@ public class DemandeController {
     }
 
     @GetMapping("/{id}/pieces")
-    public ResponseEntity<List<PieceDemande>> getPieces(@PathVariable Long id) {
+    public ResponseEntity<List<PieceDemande>> getPieces(@PathVariable("id") Long id) {
         return ResponseEntity.ok(pieceDemandeRepository.findByDemandeId(id));
     }
 
     @GetMapping("/{id}/pieces-specifiques")
-    public ResponseEntity<List<PieceDemandeSpecifique>> getPiecesSpecifiques(@PathVariable Long id) {
+    public ResponseEntity<List<PieceDemandeSpecifique>> getPiecesSpecifiques(@PathVariable("id") Long id) {
         return ResponseEntity.ok(pieceDemandeSpecifiqueRepository.findByDemandeId(id));
     }
 
     @GetMapping("/verifier-passeport/{numero}")
-    public ResponseEntity<Map<String, Boolean>> verifierNumeroPasseport(@PathVariable String numero) {
+    public ResponseEntity<Map<String, Boolean>> verifierNumeroPasseport(@PathVariable("numero") String numero) {
         boolean existe = demandeService.numeroPasseportDejaUtilise(numero);
         return ResponseEntity.ok(Map.of("existe", existe));
     }
 
     @GetMapping("/verifier-numero-visa/{numero}")
-    public ResponseEntity<Map<String, Boolean>> verifierNumeroVisa(@PathVariable String numero) {
+    public ResponseEntity<Map<String, Boolean>> verifierNumeroVisa(@PathVariable("numero") String numero) {
         boolean existe = demandeService.numeroVisaDejaUtilise(numero);
         return ResponseEntity.ok(Map.of("existe", existe));
     }
 
     @GetMapping("/visa-reference/{numero}")
-    public ResponseEntity<?> verifierReference(@PathVariable String numero) {
+    public ResponseEntity<?> verifierReference(@PathVariable("numero") String numero) {
         Optional<VisaTransformable> vt = visaTransformableRepository.findByNumeroReference(numero);
         if (vt.isPresent()) {
             VisaTransformable v = vt.get();

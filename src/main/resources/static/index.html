@@ -442,14 +442,16 @@
         const numeroPasseport = document.getElementById('numeroPasseport').value.trim();
         const resPasseport = await fetch(API + '/api/demandes/verifier-passeport/' + encodeURIComponent(numeroPasseport));
         if (!resPasseport.ok) {
-          throw new Error('Vérification du passeport indisponible');
+          const errData = await resPasseport.json();
+          throw new Error(errData.error || 'Erreur serveur lors de la vérification du passeport');
         }
         const dataPasseport = await resPasseport.json();
         if (dataPasseport.existe) {
           showAlert('Ce numéro de passeport est déjà utilisé', 'error'); return false;
         }
       } catch (e) {
-        showAlert('Impossible de vérifier le numéro de passeport pour le moment', 'error'); return false;
+        console.error('Erreur Étape 2:', e);
+        showAlert('Erreur de vérification : ' + e.message, 'error'); return false;
       }
     }
     if (step === 3) {
@@ -482,14 +484,16 @@
         const numeroVisa = document.getElementById('numeroReferenceVisa').value.trim();
         const resVisa = await fetch(API + '/api/demandes/verifier-numero-visa/' + encodeURIComponent(numeroVisa));
         if (!resVisa.ok) {
-          throw new Error('Vérification du visa indisponible');
+          const errData = await resVisa.json();
+          throw new Error(errData.error || 'Erreur serveur lors de la vérification du visa');
         }
         const dataVisa = await resVisa.json();
         if (dataVisa.existe) {
           showAlert('Ce numéro de référence du visa est déjà utilisé', 'error'); return false;
         }
       } catch (e) {
-        showAlert('Impossible de vérifier le numéro de référence du visa pour le moment', 'error'); return false;
+        console.error('Erreur Étape 3:', e);
+        showAlert('Erreur de vérification : ' + e.message, 'error'); return false;
       }
     }
     if (step === 4) {

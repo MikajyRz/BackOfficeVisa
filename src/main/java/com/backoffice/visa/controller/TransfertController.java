@@ -25,7 +25,7 @@ public class TransfertController {
     }
 
     @GetMapping("/recherche")
-    public ResponseEntity<?> rechercher(@RequestParam String critere) {
+    public ResponseEntity<?> rechercher(@RequestParam("critere") String critere) {
         Optional<Demande> demandeOpt = transfertService.rechercherDemandeEligible(critere);
         if (demandeOpt.isPresent()) {
             Demande d = demandeOpt.get();
@@ -48,19 +48,19 @@ public class TransfertController {
     }
 
     @PutMapping("/{id}/valider")
-    public ResponseEntity<?> valider(@PathVariable Long id) {
+    public ResponseEntity<?> valider(@PathVariable("id") Long id) {
         transfertService.validerTransfert(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/rejeter")
-    public ResponseEntity<?> rejeter(@PathVariable Long id) {
+    public ResponseEntity<?> rejeter(@PathVariable("id") Long id) {
         transfertService.rejeterTransfert(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}/emettre")
-    public ResponseEntity<?> emettre(@PathVariable Long id) {
+    public ResponseEntity<?> emettre(@PathVariable("id") Long id) {
         try {
             return ResponseEntity.ok(transfertService.emettreTransfert(id));
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class TransfertController {
     }
 
     @GetMapping("/demande/{demandeId}")
-    public ResponseEntity<?> getByDemandeId(@PathVariable Long demandeId) {
+    public ResponseEntity<?> getByDemandeId(@PathVariable("demandeId") Long demandeId) {
         return transfertService.findByDemandeId(demandeId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

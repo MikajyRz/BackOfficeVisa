@@ -44,8 +44,17 @@ public class DuplicataService {
         try {
             Long id = Long.parseLong(critere);
             demandeOpt = demandeRepository.findById(id);
+            
+            // 2. Si non trouvé par ID, on tente par numéro de passeport
+            if (demandeOpt.isEmpty()) {
+                demandeOpt = demandeRepository.findAll().stream()
+                        .filter(d -> d.getVisaTransformable() != null && 
+                                d.getVisaTransformable().getPasseport() != null &&
+                                critere.equalsIgnoreCase(d.getVisaTransformable().getPasseport().getNumeroPasseport()))
+                        .findFirst();
+            }
         } catch (NumberFormatException e) {
-            // Tentative par référence de carte
+            // 3. Tentative par référence de carte
             demandeOpt = carteResidentRepository.findAll().stream()
                     .filter(c -> critere.equalsIgnoreCase(c.getReference()))
                     .map(CarteResident::getDemande)
@@ -56,16 +65,28 @@ public class DuplicataService {
     }
 
     private boolean estEligibleAuDuplicata(Demande d) {
+        System.out.println("Vérification éligibilité Duplicata pour Demande ID: " + d.getId());
+        
         // 1. La demande d'origine doit être terminée
-        if (d.getStatut() != Demande.STATUT_TERMINE) return false;
+        if (d.getStatut() != Demande.STATUT_TERMINE) {
+            System.out.println("-> ÉCHEC : Statut actuel (" + d.getStatut() + ") != TERMINE (2)");
+            return false;
+        }
 
         // 2. Une carte de résident doit exister
         Optional<CarteResident> carteOpt = carteResidentRepository.findByDemandeId(d.getId());
-        if (carteOpt.isEmpty()) return false;
+        if (carteOpt.isEmpty()) {
+            System.out.println("-> ÉCHEC : Aucune CarteResident trouvée pour cette demande");
+            return false;
+        }
 
-        // 3. La carte ne doit pas être expirée (on fait un renouvellement sinon)
-        if (carteOpt.get().getDateFin().isBefore(LocalDate.now())) return false;
+        // 3. La carte ne doit pas être expirée
+        if (carteOpt.get().getDateFin().isBefore(LocalDate.now())) {
+            System.out.println("-> ÉCHEC : La carte est expirée (Date fin: " + carteOpt.get().getDateFin() + ")");
+            return false;
+        }
 
+        System.out.println("-> SUCCÈS : Le dossier est éligible");
         return true;
     }
 

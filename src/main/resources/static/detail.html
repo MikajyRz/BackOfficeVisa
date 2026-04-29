@@ -46,6 +46,29 @@
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
+    .btn-import-pieces {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #1a5276, #2471a3);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(26, 82, 118, 0.3);
+    }
+    .btn-import-pieces:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 82, 118, 0.4);
+      background: linear-gradient(135deg, #1a6fa0, #2980b9);
+    }
+    .btn-import-pieces svg { flex-shrink: 0; }
+
     @media (max-width: 600px) {
       .info-grid { grid-template-columns: 1fr; }
       .header { flex-direction: column; gap: 10px; text-align: center; }
@@ -88,6 +111,14 @@
         <span id="date-traitement" style="font-weight:600;"></span>
       </div>
     </div>
+  </div>
+
+  <!-- Bouton vers la page d'upload -->
+  <div style="text-align:center; margin-bottom:24px;">
+    <a class="btn-import-pieces" id="link-upload" href="#" style="display:inline-flex;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importer les pièces justificatives
+    </a>
   </div>
 
   <!-- Informations personnelles -->
@@ -171,6 +202,9 @@
     window.location.href = 'demandes.html';
   }
 
+  // Lien vers la page d'upload
+  document.getElementById('link-upload').href = 'upload.html?id=' + demandeId;
+
   async function chargerDetail() {
     try {
       const [demandeRes, piecesRes, piecesSpecRes] = await Promise.all([
@@ -193,6 +227,7 @@
       const statusMap = {
         1: { text: 'Dossier créé', class: 'badge-cree' },
         2: { text: 'Dossier terminé', class: 'badge-termine' },
+        3: { text: 'Scan terminé', class: 'badge-termine' }, // Même style que terminé car c'est une étape avancée
         10: { text: 'Duplicata demandé', class: 'badge-cree' },
         11: { text: 'Duplicata validé', class: 'badge-termine' },
         12: { text: 'Duplicata rejeté', class: 'badge-no' },
@@ -213,6 +248,10 @@
       let actionsHtml = '<a class="btn btn-secondary" href="demandes.html">← Retour</a> ';
       
       if (d.statut === 1) {
+        // Au statut 1, on ne peut que aller vers l'import (déjà un gros bouton au milieu)
+        // Mais on pourrait remettre un petit rappel ici si tu veux.
+      } else if (d.statut === 3) {
+        // Au statut 3 (Scan terminé), on peut enfin terminer le dossier
         actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
       } else if (d.statut === 10) {
         actionsHtml += '<button class="btn btn-success" onclick="validerDuplicata()">Valider</button> ';
@@ -243,9 +282,6 @@
         } catch(e) {}
       }
 
-      // Détails spécifiques Duplicata (similaire si endpoint existe)
-      // if (d.statut >= 10 && d.statut <= 13) { ... }
-
       // Demandeur
       if (d.demandeur) {
         document.getElementById('d-nom').textContent = d.demandeur.nom || '-';
@@ -259,7 +295,7 @@
         document.getElementById('d-adresse').textContent = d.demandeur.adresse || '-';
       }
 
-      // Passeport — récupérer via le visa transformable ou séparément
+      // Passeport
       if (d.visaTransformable && d.visaTransformable.passeport) {
         const p = d.visaTransformable.passeport;
         document.getElementById('d-num-passeport').textContent = p.numeroPasseport || '-';
@@ -287,16 +323,24 @@
       let piecesHtml = '';
       pieces.forEach(p => {
         const libelle = p.typePieceCommune ? p.typePieceCommune.libelle : 'Pièce inconnue';
+        const hasFichier = p.fichierPath && p.fichierPath.length > 0;
         piecesHtml += `<li>
           <span>${libelle}</span>
-          <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          <span>
+            ${hasFichier ? '<a href="/api/pieces/fichier/' + p.fichierPath + '" target="_blank" style="color:#2980b9; text-decoration:none; margin-right:8px;" title="Voir le fichier">📎</a>' : ''}
+            <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          </span>
         </li>`;
       });
       piecesSpec.forEach(p => {
         const libelle = p.typePieceSpecifique ? p.typePieceSpecifique.libelle : 'Pièce inconnue';
+        const hasFichier = p.fichierPath && p.fichierPath.length > 0;
         piecesHtml += `<li>
           <span>${libelle}</span>
-          <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          <span>
+            ${hasFichier ? '<a href="/api/pieces/fichier/' + p.fichierPath + '" target="_blank" style="color:#2980b9; text-decoration:none; margin-right:8px;" title="Voir le fichier">📎</a>' : ''}
+            <span class="${p.presente ? 'status-ok' : 'status-no'}">${p.presente ? '✅ Fournie' : '❌ Non fournie'}</span>
+          </span>
         </li>`;
       });
       if (!piecesHtml) piecesHtml = '<li style="color:#999;">Aucune pièce enregistrée</li>';
@@ -340,7 +384,7 @@
     else { const d = await res.json(); showAlert(d.error || 'Erreur', 'error'); }
   }
 
-  // Fonctions Duplicata (similaire)
+  // Fonctions Duplicata
   async function validerDuplicata() {
     if (!confirm('Valider cette demande de duplicata ?')) return;
     const res = await fetch(`/api/cartes-resident/duplicata/${demandeId}/valider`, { method: 'PUT' });
@@ -362,6 +406,7 @@
     el.textContent = msg;
     el.className = 'alert alert-' + type;
     el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
   }
 
   chargerDetail();

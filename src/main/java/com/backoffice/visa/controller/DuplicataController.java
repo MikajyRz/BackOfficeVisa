@@ -25,7 +25,7 @@ public class DuplicataController {
     }
 
     @GetMapping("/recherche")
-    public ResponseEntity<?> rechercher(@RequestParam String critere) {
+    public ResponseEntity<?> rechercher(@RequestParam("critere") String critere) {
         Optional<Demande> demandeOpt = duplicataService.rechercherDemandeEligible(critere);
         if (demandeOpt.isPresent()) {
             Demande d = demandeOpt.get();
@@ -51,7 +51,7 @@ public class DuplicataController {
     }
 
     @PutMapping("/{id}/valider")
-    public ResponseEntity<?> valider(@PathVariable Long id) {
+    public ResponseEntity<?> valider(@PathVariable("id") Long id) {
         try {
             duplicataService.validerDuplicata(id);
             return ResponseEntity.ok(Map.of("message", "Demande de duplicata validée"));
@@ -61,7 +61,7 @@ public class DuplicataController {
     }
 
     @PutMapping("/{id}/rejeter")
-    public ResponseEntity<?> rejeter(@PathVariable Long id) {
+    public ResponseEntity<?> rejeter(@PathVariable("id") Long id) {
         try {
             duplicataService.rejeterDuplicata(id);
             return ResponseEntity.ok(Map.of("message", "Demande de duplicata rejetée"));
@@ -71,7 +71,7 @@ public class DuplicataController {
     }
 
     @PutMapping("/{id}/emettre")
-    public ResponseEntity<?> emettre(@PathVariable Long id) {
+    public ResponseEntity<?> emettre(@PathVariable("id") Long id) {
         try {
             CarteResident carte = duplicataService.emettreDuplicata(id);
             Map<String, Object> response = new HashMap<>();

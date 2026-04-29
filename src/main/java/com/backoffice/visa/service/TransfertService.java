@@ -19,6 +19,7 @@ public class TransfertService {
     private final StatutDemandeRepository statutDemandeRepository;
     private final PasseportRepository passeportRepository;
     private final VisaTransformableRepository visaTransformableRepository;
+    private final HistoriquePasseportVisaRepository historiquePasseportVisaRepository;
 
     public TransfertService(DemandeRepository demandeRepository,
                            DemandeTransfertRepository demandeTransfertRepository,
@@ -26,7 +27,8 @@ public class TransfertService {
                            TypeDemandeRepository typeDemandeRepository,
                            StatutDemandeRepository statutDemandeRepository,
                            PasseportRepository passeportRepository,
-                           VisaTransformableRepository visaTransformableRepository) {
+                           VisaTransformableRepository visaTransformableRepository,
+                           HistoriquePasseportVisaRepository historiquePasseportVisaRepository) {
         this.demandeRepository = demandeRepository;
         this.demandeTransfertRepository = demandeTransfertRepository;
         this.carteResidentRepository = carteResidentRepository;
@@ -34,6 +36,7 @@ public class TransfertService {
         this.statutDemandeRepository = statutDemandeRepository;
         this.passeportRepository = passeportRepository;
         this.visaTransformableRepository = visaTransformableRepository;
+        this.historiquePasseportVisaRepository = historiquePasseportVisaRepository;
     }
 
     public Optional<Demande> rechercherDemandeEligible(String critere) {
@@ -72,10 +75,25 @@ public class TransfertService {
     }
 
     private boolean estEligibleAuTransfert(Demande d) {
-        if (d.getStatut() != Demande.STATUT_TERMINE) return false;
+        System.out.println("Vérification éligibilité Transfert pour Demande ID: " + d.getId());
+        
+        if (d.getStatut() != Demande.STATUT_TERMINE) {
+            System.out.println("-> ÉCHEC : Statut actuel (" + d.getStatut() + ") != TERMINE (2)");
+            return false;
+        }
+        
         Optional<CarteResident> carteOpt = carteResidentRepository.findByDemandeId(d.getId());
-        if (carteOpt.isEmpty()) return false;
-        if (carteOpt.get().getDateFin().isBefore(LocalDate.now())) return false;
+        if (carteOpt.isEmpty()) {
+            System.out.println("-> ÉCHEC : Aucune CarteResident trouvée pour cette demande");
+            return false;
+        }
+        
+        if (carteOpt.get().getDateFin().isBefore(LocalDate.now())) {
+            System.out.println("-> ÉCHEC : La carte est expirée (Date fin: " + carteOpt.get().getDateFin() + ")");
+            return false;
+        }
+        
+        System.out.println("-> SUCCÈS : Le dossier est éligible");
         return true;
     }
 
@@ -140,10 +158,11 @@ public class TransfertService {
 
     @Transactional
     public CarteResident emettreTransfert(Long id) {
-        Demande demande = demandeRepository.findById(id).orElseThrow();
-        DemandeTransfert detail = demandeTransfertRepository.findByDemandeId(id).orElseThrow();
+        Demande demande = demandeRepository.findById(id).orElseThrow(() -> new RuntimeException("Demande introuvable"));
+        DemandeTransfert detail = demandeTransfertRepository.findByDemandeId(id)
+                .orElseThrow(() -> new RuntimeException("Détails du transfert introuvables"));
         
-        // 1. Créer/Mettre à jour le passeport du demandeur
+        // 1. Créer le nouveau passeport du demandeur
         Passeport nouveauPass = new Passeport();
         nouveauPass.setDemandeur(demande.getDemandeur());
         nouveauPass.setNumeroPasseport(detail.getNouveauNumeroPasseport());
@@ -152,29 +171,34 @@ public class TransfertService {
         nouveauPass.setDateExpiration(detail.getNouvelleDateExpiration());
         nouveauPass = passeportRepository.save(nouveauPass);
 
-        // 2. Créer un nouveau VisaTransformable (pour garder l'historique du passeport d'origine)
-        VisaTransformable ancienVisa = demande.getVisaTransformable();
-        VisaTransformable nouveauVisa = new VisaTransformable();
-        nouveauVisa.setDemandeur(demande.getDemandeur());
-        nouveauVisa.setPasseport(nouveauPass);
-        nouveauVisa.setNumeroReference(ancienVisa.getNumeroReference());
-        nouveauVisa.setLieu(ancienVisa.getLieu());
-        nouveauVisa.setDateDebut(ancienVisa.getDateDebut());
-        nouveauVisa.setDateFin(ancienVisa.getDateFin());
-        nouveauVisa = visaTransformableRepository.save(nouveauVisa);
+        // 2. LOGIQUE D'HISTORIQUE (VOTRE SOLUTION) :
+        // On récupère le visa existant
+        VisaTransformable visa = demande.getVisaTransformable();
+        Passeport ancienPass = visa.getPasseport();
 
-        // Mettre à jour la demande pour pointer vers le nouveau visa
-        demande.setVisaTransformable(nouveauVisa);
+        // On enregistre le mouvement dans la nouvelle table d'historique
+        HistoriquePasseportVisa historique = new HistoriquePasseportVisa();
+        historique.setVisaTransformable(visa);
+        historique.setAncienPasseport(ancienPass);
+        historique.setNouveauPasseport(nouveauPass);
+        historique.setDateTransfert(LocalDate.now());
+        historiquePasseportVisaRepository.save(historique);
+
+        // ON FAIT L'UPDATE sur le visa principal (pour qu'il pointe vers le nouveau passeport)
+        // Mais comme on vient d'enregistrer l'histoire juste au-dessus, on ne perd rien !
+        visa.setPasseport(nouveauPass);
+        visaTransformableRepository.save(visa);
 
         // 3. Émettre nouvelle carte
         CarteResident nouvelleCarte = new CarteResident();
         nouvelleCarte.setDemande(demande);
         nouvelleCarte.setPasseport(nouveauPass);
         nouvelleCarte.setDateDebut(LocalDate.now());
-        nouvelleCarte.setDateFin(detail.getCarteOrigine().getDateFin()); // On garde la même fin
+        nouvelleCarte.setDateFin(detail.getCarteOrigine().getDateFin()); // On garde la même fin (règle métier)
         nouvelleCarte.setReference("CR-TRF-" + demande.getId() + "-" + LocalDate.now().getYear());
         nouvelleCarte = carteResidentRepository.save(nouvelleCarte);
 
+        // Mise à jour de la demande
         demande.setStatut(Demande.STATUT_TRANSFERT_EMIS);
         demande.setDateTraitement(LocalDate.now());
         demandeRepository.save(demande);

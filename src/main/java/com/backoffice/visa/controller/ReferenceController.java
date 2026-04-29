@@ -59,7 +59,7 @@ public class ReferenceController {
     }
 
     @GetMapping("/pieces-specifiques/{typeVisaId}")
-    public ResponseEntity<List<TypePieceSpecifique>> getPiecesSpecifiques(@PathVariable Long typeVisaId) {
+    public ResponseEntity<List<TypePieceSpecifique>> getPiecesSpecifiques(@PathVariable("typeVisaId") Long typeVisaId) {
         return ResponseEntity.ok(typePieceSpecifiqueRepository.findByTypeVisaId(typeVisaId));
     }
 }

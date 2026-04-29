@@ -206,17 +206,57 @@ public class DemandeService {
     }
 
     /**
-     * Terminer le dossier (passe de "Dossier créé" à "Dossier terminé")
-     * Le dossier ne peut plus être modifié.
-     * Crée automatiquement la carte de résident.
+     * Scanner le dossier (passe de "Dossier créé" à "Scan terminé")
+     * Cette étape est possible une fois que toutes les pièces sont importées.
+     */
+    @Transactional
+    public Demande scannerDossier(Long demandeId) {
+        Demande demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new RuntimeException("Demande introuvable"));
+
+        if (demande.getStatut() != 1) {
+            throw new RuntimeException("Seul un dossier au statut 'Dossier créé' peut être scanné.");
+        }
+
+        // On vérifie une dernière fois que toutes les pièces obligatoires sont présentes avec un fichier
+        if (!verifierToutesPiecesImportees(demandeId)) {
+            throw new RuntimeException("Toutes les pièces obligatoires doivent avoir un fichier importé avant de scanner.");
+        }
+
+        demande.setStatut(3); // Scan terminé
+        enregistrerChangementStatut(demande, 3);
+        return demandeRepository.save(demande);
+    }
+
+    /**
+     * Vérifie si toutes les pièces obligatoires ont effectivement un fichier uploadé
+     */
+    public boolean verifierToutesPiecesImportees(Long demandeId) {
+        List<PieceDemande> piecesCommunes = pieceDemandeRepository.findByDemandeId(demandeId);
+        for (PieceDemande p : piecesCommunes) {
+            if (p.getFichierPath() == null || p.getFichierPath().isEmpty()) {
+                return false;
+            }
+        }
+        List<PieceDemandeSpecifique> piecesSpec = pieceDemandeSpecifiqueRepository.findByDemandeId(demandeId);
+        for (PieceDemandeSpecifique p : piecesSpec) {
+            if (p.getFichierPath() == null || p.getFichierPath().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Terminer le dossier (passe de "Scan terminé" à "Dossier terminé")
      */
     @Transactional
     public Demande terminerDossier(Long demandeId) {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
-        if (demande.getStatut() != 1) {
-            throw new RuntimeException("Seul un dossier créé peut être terminé. Statut actuel : " + demande.getStatutLibelle());
+        if (demande.getStatut() != 3) {
+            throw new RuntimeException("Le dossier doit être au statut 'Scan terminé' avant d'être terminé. Statut actuel : " + demande.getStatutLibelle());
         }
 
         demande.setStatut(2); // Dossier terminé
