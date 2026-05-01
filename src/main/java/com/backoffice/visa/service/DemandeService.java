@@ -150,6 +150,23 @@ public class DemandeService {
         demande.setVisaTransformable(visaTransformable);
         demande = demandeRepository.save(demande);
 
+        // 4.5 Créer le Visa initial (si fourni)
+        if (form.getReferenceVisaOrigine() != null && !form.getReferenceVisaOrigine().isBlank()) {
+            if (form.getDateDebutVisaOrigine() == null || form.getDateFinVisaOrigine() == null) {
+                throw new RuntimeException("Les dates de début et de fin du visa d'origine sont obligatoires");
+            }
+            if (form.getDateDebutVisaOrigine().isAfter(form.getDateFinVisaOrigine())) {
+                throw new RuntimeException("La date de début du visa d'origine doit être antérieure ou égale à la date de fin");
+            }
+            Visa visaInitial = new Visa();
+            visaInitial.setDemande(demande);
+            visaInitial.setPasseport(passeport);
+            visaInitial.setReference(form.getReferenceVisaOrigine());
+            visaInitial.setDateDebut(form.getDateDebutVisaOrigine());
+            visaInitial.setDateFin(form.getDateFinVisaOrigine());
+            visaRepository.save(visaInitial);
+        }
+
         // 5. Enregistrer les pièces communes
         List<TypePieceCommune> toutesCommunes = typePieceCommuneRepository.findAll();
         for (TypePieceCommune type : toutesCommunes) {
@@ -325,6 +342,11 @@ public class DemandeService {
     public Demande creerDossierTermine(DemandeFormDTO form) {
         // On réutilise la création de base
         Demande demande = creerDemande(form);
+        
+        // Pour un dossier antérieur, on simule que le scan est déjà fait
+        demande.setStatut(Demande.STATUT_SCANNE);
+        enregistrerChangementStatut(demande, Demande.STATUT_SCANNE);
+        demande = demandeRepository.save(demande);
         
         // On la termine immédiatement
         return terminerDossier(demande.getId());

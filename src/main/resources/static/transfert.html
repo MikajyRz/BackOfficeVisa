@@ -141,6 +141,20 @@
         <input type="date" id="c2-dateExpirationPasseport" />
       </div>
 
+      <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Informations Visa</h3>
+      <div class="form-group">
+        <label>Référence</label>
+        <input type="text" id="c2-referenceVisaOrigine" />
+      </div>
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" id="c2-dateDebutVisaOrigine" />
+      </div>
+      <div class="form-group">
+        <label>Date de fin</label>
+        <input type="date" id="c2-dateFinVisaOrigine" />
+      </div>
+
       <h3 style="grid-column: 1/-1; margin-top: 15px; font-size: 1em; color: #1a5276;">Informations Visa Transformable</h3>
       <div class="form-group">
         <label>Type de Visa</label>
@@ -348,6 +362,9 @@
       lieuVisa: v('c2-lieuVisa'),
       dateDebutVisa: v('c2-dateDebutVisa'),
       dateFinVisa: v('c2-dateFinVisa'),
+      referenceVisaOrigine: v('c2-referenceVisaOrigine'),
+      dateDebutVisaOrigine: v('c2-dateDebutVisaOrigine'),
+      dateFinVisaOrigine: v('c2-dateFinVisaOrigine'),
       piecesCommunesPresentes: piecesCommunesPresentes,
       piecesSpecifiquesPresentes: piecesSpecifiquesPresentes
     };
