@@ -36,6 +36,11 @@ public class DemandeFormDTO {
     private List<Long> piecesCommunesPresentes;
     private List<Long> piecesSpecifiquesPresentes;
 
+    // --- Informations du Visa (Table Visa) ---
+    private String referenceVisaOrigine;
+    private LocalDate dateDebutVisaOrigine;
+    private LocalDate dateFinVisaOrigine;
+
     public DemandeFormDTO() {}
 
     public String getNom() { return nom; }
@@ -80,4 +85,10 @@ public class DemandeFormDTO {
     public void setDateDebutVisa(LocalDate dateDebutVisa) { this.dateDebutVisa = dateDebutVisa; }
     public LocalDate getDateFinVisa() { return dateFinVisa; }
     public void setDateFinVisa(LocalDate dateFinVisa) { this.dateFinVisa = dateFinVisa; }
+    public String getReferenceVisaOrigine() { return referenceVisaOrigine; }
+    public void setReferenceVisaOrigine(String referenceVisaOrigine) { this.referenceVisaOrigine = referenceVisaOrigine; }
+    public LocalDate getDateDebutVisaOrigine() { return dateDebutVisaOrigine; }
+    public void setDateDebutVisaOrigine(LocalDate dateDebutVisaOrigine) { this.dateDebutVisaOrigine = dateDebutVisaOrigine; }
+    public LocalDate getDateFinVisaOrigine() { return dateFinVisaOrigine; }
+    public void setDateFinVisaOrigine(LocalDate dateFinVisaOrigine) { this.dateFinVisaOrigine = dateFinVisaOrigine; }
 }
