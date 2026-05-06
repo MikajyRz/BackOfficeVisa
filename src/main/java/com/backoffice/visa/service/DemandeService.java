@@ -319,6 +319,17 @@ public class DemandeService {
         return demandeRepository.findAll();
     }
 
+    public List<Demande> searchDemandes(String query) {
+        if (query == null || query.isBlank()) {
+            return getAllDemandes();
+        }
+        return demandeRepository.searchByIdOrPasseport(query.trim());
+    }
+
+    public List<StatutDemande> getHistorique(Long demandeId) {
+        return statutDemandeRepository.findByDemandeIdOrderByDateChangementStatutDesc(demandeId);
+    }
+
     public boolean numeroPasseportDejaUtilise(String numeroPasseport) {
         String numeroNormalise = normaliserNumero(numeroPasseport);
         if (numeroNormalise == null || numeroNormalise.isBlank()) {

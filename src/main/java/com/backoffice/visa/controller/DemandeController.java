@@ -86,6 +86,20 @@ public class DemandeController {
         }
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Demande>> searchDemandes(@RequestParam(value = "q", required = false) String query) {
+        return ResponseEntity.ok(demandeService.searchDemandes(query));
+    }
+
+    @GetMapping("/{id}/historiques")
+    public ResponseEntity<?> getHistoriques(@PathVariable("id") Long id) {
+        try {
+            return ResponseEntity.ok(demandeService.getHistorique(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<Demande>> getAllDemandes() {
         return ResponseEntity.ok(demandeService.getAllDemandes());
