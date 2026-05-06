@@ -12,18 +12,18 @@ export default function DetailPage() {
     const fetchDetailAndHistorique = async () => {
       try {
         setLoading(true);
-        const demandeRes = await axios.get(`/api/demandes/${id}`);
+        const [demandeRes, histoRes] = await Promise.all([
+          axios.get(`/api/demandes/${id}`),
+          axios.get(`/api/demandes/${id}/historiques`)
+        ]);
         setDemande(demandeRes.data);
-        
-        const histoRes = await axios.get(`/api/demandes/${id}/historiques`);
         setHistoriques(histoRes.data);
       } catch (error) {
         console.error("Erreur de récupération", error);
       } finally {
         setLoading(false);
-    }
+      }
     };
-
     fetchDetailAndHistorique();
   }, [id]);
 
@@ -44,113 +44,152 @@ export default function DetailPage() {
     }
   };
 
+  const getStatutLibelle = (statut) => {
+    switch (statut) {
+      case 1: return "Dossier créé";
+      case 2: return "Dossier scanné";
+      case 3: return "Dossier terminé";
+      case 10: return "Duplicata demandé";
+      case 11: return "Duplicata validé";
+      case 12: return "Duplicata rejeté";
+      case 13: return "Duplicata émis";
+      case 20: return "Transfert demandé";
+      case 21: return "Transfert validé";
+      case 22: return "Transfert rejeté";
+      case 23: return "Transfert émis";
+      default: return "Inconnu (" + statut + ")";
+    }
+  };
+
   if (loading) return (
-    <div className="container" style={{ textAlign: 'center', marginTop: '50px' }}>
-      Chargement des détails...
-    </div>
+    <>
+      <div className="header"><h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1></div>
+      <div className="container" style={{ textAlign: 'center', marginTop: '50px', color: '#555' }}>
+        Chargement des détails...
+      </div>
+    </>
   );
 
   if (!demande) return (
-    <div className="container">
-      <div className="card" style={{ textAlign: 'center', color: '#e74c3c', padding: '40px' }}>
-        <h2 style={{ color: '#e74c3c' }}>Erreur</h2>
-        <p>Demande introuvable.</p>
-        <div style={{ marginTop: '20px' }}>
-            <Link to="/" className="btn btn-secondary">Retour à la recherche</Link>
+    <>
+      <div className="header"><h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1></div>
+      <div className="container">
+        <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>❌</div>
+          <p style={{ color: '#e74c3c', fontWeight: 600 }}>Demande introuvable.</p>
+          <div style={{ marginTop: '20px' }}>
+            <Link to="/" className="btn btn-secondary">← Retour à la recherche</Link>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
+
+  const d = demande;
+  const passeport = d.visaTransformable?.passeport;
 
   return (
     <>
       <div className="header">
-        <h1>Back Office Visa — Madagascar</h1>
+        <h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1>
       </div>
 
       <div className="container">
-        
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '2px solid #ebf5fb', paddingBottom: '10px' }}>
-              <h2 style={{ borderBottom: 'none', paddingBottom: 0, margin: 0 }}>Détails de la demande #{demande.id}</h2>
-              <Link to="/" className="btn btn-secondary" style={{ fontSize: '0.85em', padding: '6px 12px' }}>
-                &larr; Retour à la recherche
-              </Link>
+
+        {/* Top Bar */}
+        <div className="top-bar">
+          <h2>Demande #{d.id}</h2>
+          <Link to="/" className="btn btn-secondary">← Retour à la recherche</Link>
+        </div>
+
+        {/* Statut Card */}
+        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div>
+            <div className="info-label">STATUT ACTUEL</div>
+            <span className={`badge ${getBadgeClass(d.statut)}`} style={{ fontSize: '0.95em' }}>{d.statutLibelle}</span>
           </div>
-          
-          <div style={{ marginTop: '15px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <tbody>
-                  <tr>
-                    <th style={{ width: '40%', padding: '10px 0', borderBottom: '1px solid #ecf0f1', color: '#555' }}>
-                        Statut Actuel
-                    </th>
-                    <td style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1' }}>
-                        <span className={`badge ${getBadgeClass(demande.statut)}`} style={{ fontSize: '1em' }}>
-                            {demande.statutLibelle}
-                        </span>
-                    </td>
-                  </tr>
-                  <tr><th style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1', color: '#555', textAlign: 'left' }}>Date de demande</th><td style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1' }}>{demande.dateDemande}</td></tr>
-                  <tr><th style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1', color: '#555', textAlign: 'left' }}>Demandeur</th><td style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1' }}>{demande.demandeur?.nom} {demande.demandeur?.prenom}</td></tr>
-                  <tr><th style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1', color: '#555', textAlign: 'left' }}>Numéro de Passeport</th><td style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1' }}>{demande.visaTransformable?.passeport?.numeroPasseport || '-'}</td></tr>
-                  <tr><th style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1', color: '#555', textAlign: 'left' }}>Type de Visa</th><td style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1' }}>{demande.typeVisa?.libelle || '-'}</td></tr>
-                  <tr><th style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1', color: '#555', textAlign: 'left' }}>Type de Demande</th><td style={{ padding: '10px 0', borderBottom: '1px solid #ecf0f1' }}>{demande.typeDemande?.libelle || '-'}</td></tr>
-                </tbody>
-              </table>
+          <div>
+            <div className="info-label">DATE DE DEMANDE</div>
+            <span style={{ fontWeight: 600 }}>{d.dateDemande || '-'}</span>
+          </div>
+          <div>
+            <div className="info-label">DATE TRAITEMENT</div>
+            <span style={{ fontWeight: 600 }}>{d.dateTraitement || '-'}</span>
           </div>
         </div>
 
+        {/* Informations personnelles */}
         <div className="card">
-          <h2>Historique de la Demande</h2>
+          <h3 className="card-title">Informations personnelles</h3>
+          <div className="info-grid">
+            <div className="info-item"><div className="info-label">NOM</div><div className="info-value">{d.demandeur?.nom || '-'}</div></div>
+            <div className="info-item"><div className="info-label">PRÉNOM</div><div className="info-value">{d.demandeur?.prenom || '-'}</div></div>
+            <div className="info-item"><div className="info-label">DATE DE NAISSANCE</div><div className="info-value">{d.demandeur?.dateNaissance || '-'}</div></div>
+            <div className="info-item"><div className="info-label">LIEU DE NAISSANCE</div><div className="info-value">{d.demandeur?.lieuNaissance || '-'}</div></div>
+            <div className="info-item"><div className="info-label">NATIONALITÉ</div><div className="info-value">{d.demandeur?.nationalite?.libelle || '-'}</div></div>
+            <div className="info-item"><div className="info-label">SITUATION FAMILIALE</div><div className="info-value">{d.demandeur?.situationFamiliale?.libelle || '-'}</div></div>
+            <div className="info-item"><div className="info-label">TÉLÉPHONE</div><div className="info-value">{d.demandeur?.telephone || '-'}</div></div>
+            <div className="info-item"><div className="info-label">EMAIL</div><div className="info-value">{d.demandeur?.email || '-'}</div></div>
+            <div className="info-item" style={{ gridColumn: '1 / -1' }}><div className="info-label">ADRESSE</div><div className="info-value">{d.demandeur?.adresse || '-'}</div></div>
+          </div>
+        </div>
+
+        {/* Passeport */}
+        <div className="card">
+          <h3 className="card-title">Passeport</h3>
+          <div className="info-grid">
+            <div className="info-item"><div className="info-label">NUMÉRO</div><div className="info-value">{passeport?.numeroPasseport || '-'}</div></div>
+            <div className="info-item"><div className="info-label">PAYS DE DÉLIVRANCE</div><div className="info-value">{passeport?.paysDelivrance || '-'}</div></div>
+            <div className="info-item"><div className="info-label">DATE DE DÉLIVRANCE</div><div className="info-value">{passeport?.dateDelivrance || '-'}</div></div>
+            <div className="info-item"><div className="info-label">DATE D'EXPIRATION</div><div className="info-value">{passeport?.dateExpiration || '-'}</div></div>
+          </div>
+        </div>
+
+        {/* Demande */}
+        <div className="card">
+          <h3 className="card-title">Demande</h3>
+          <div className="info-grid">
+            <div className="info-item"><div className="info-label">TYPE DE DEMANDE</div><div className="info-value">{d.typeDemande?.libelle || '-'}</div></div>
+            <div className="info-item"><div className="info-label">TYPE DE VISA</div><div className="info-value">{d.typeVisa?.libelle || '-'}</div></div>
+          </div>
+        </div>
+
+        {/* Visa transformable */}
+        {d.visaTransformable && (
+          <div className="card">
+            <h3 className="card-title">Visa transformable</h3>
+            <div className="info-grid">
+              <div className="info-item"><div className="info-label">NUMÉRO DE RÉFÉRENCE</div><div className="info-value">{d.visaTransformable.numeroReference || '-'}</div></div>
+              <div className="info-item"><div className="info-label">LIEU</div><div className="info-value">{d.visaTransformable.lieu || '-'}</div></div>
+              <div className="info-item"><div className="info-label">DATE DE DÉBUT</div><div className="info-value">{d.visaTransformable.dateDebut || '-'}</div></div>
+              <div className="info-item"><div className="info-label">DATE DE FIN</div><div className="info-value">{d.visaTransformable.dateFin || '-'}</div></div>
+            </div>
+          </div>
+        )}
+
+        {/* Historique */}
+        <div className="card">
+          <h3 className="card-title">Historique de la Demande</h3>
           {historiques.length === 0 ? (
-            <div className="empty" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
               <div style={{ fontSize: '2.5em', marginBottom: '10px' }}>🕒</div>
               <p>Aucun historique trouvé pour cette demande.</p>
             </div>
           ) : (
-            <div style={{ marginTop: '20px' }}>
-              {historiques.map((historique, index) => {
-                let libelleHisto = "";
-                switch (historique.statut) {
-                    case 1: libelleHisto = "Dossier créé"; break;
-                    case 2: libelleHisto = "Dossier scanné"; break;
-                    case 3: libelleHisto = "Dossier terminé"; break;
-                    case 10: libelleHisto = "Duplicata demandé"; break;
-                    case 11: libelleHisto = "Duplicata validé"; break;
-                    case 12: libelleHisto = "Duplicata rejeté"; break;
-                    case 13: libelleHisto = "Duplicata émis"; break;
-                    case 20: libelleHisto = "Transfert demandé"; break;
-                    case 21: libelleHisto = "Transfert validé"; break;
-                    case 22: libelleHisto = "Transfert rejeté"; break;
-                    case 23: libelleHisto = "Transfert émis"; break;
-                    default: libelleHisto = "Inconnu (" + historique.statut + ")";
-                }
-
+            <div className="timeline">
+              {historiques.map((h, index) => {
                 const isLatest = index === 0;
-
+                const libelle = getStatutLibelle(h.statut);
                 return (
-                  <div key={historique.id} style={{ 
-                    display: 'flex', 
-                    padding: '15px 20px', 
-                    border: '1px solid #ecf0f1',
-                    borderLeft: isLatest ? '5px solid #2980b9' : '5px solid #bdc3c7', 
-                    backgroundColor: isLatest ? '#ebf5fb' : '#fff', 
-                    marginBottom: '10px',
-                    borderRadius: '6px',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    boxShadow: isLatest ? '0 2px 5px rgba(41,128,185,0.1)' : 'none'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '1.05em', fontWeight: 'bold', color: isLatest ? '#1a5276' : '#2c3e50', marginBottom: '5px' }}>
-                        Passage au statut : {libelleHisto}
+                  <div key={h.id} className={`timeline-item ${isLatest ? 'timeline-latest' : ''}`}>
+                    <div className="timeline-dot" style={{ background: isLatest ? '#2980b9' : '#bdc3c7' }}></div>
+                    <div className="timeline-content">
+                      <div className="timeline-title">
+                        {libelle}
+                        {isLatest && <span className={`badge ${getBadgeClass(h.statut)}`} style={{ marginLeft: '10px', fontSize: '0.75em' }}>Statut actuel</span>}
                       </div>
-                      <div style={{ fontSize: '0.88em', color: '#7f8c8d' }}>
-                        Date de mise à jour : {historique.dateChangementStatut}
-                      </div>
+                      <div className="timeline-date">{h.dateChangementStatut}</div>
                     </div>
-                    {isLatest && <span className={`badge ${getBadgeClass(historique.statut)}`}>Statut actuel</span>}
                   </div>
                 );
               })}

@@ -50,7 +50,7 @@ export default function SearchPage() {
   return (
     <>
       <div className="header">
-        <h1>Back Office Visa — Madagascar</h1>
+        <h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1>
       </div>
       
       <div className="container">

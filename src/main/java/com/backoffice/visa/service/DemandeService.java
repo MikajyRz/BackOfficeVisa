@@ -327,7 +327,7 @@ public class DemandeService {
     }
 
     public List<StatutDemande> getHistorique(Long demandeId) {
-        return statutDemandeRepository.findByDemandeIdOrderByDateChangementStatutDesc(demandeId);
+        return statutDemandeRepository.findByDemandeIdOrderByIdDesc(demandeId);
     }
 
     public boolean numeroPasseportDejaUtilise(String numeroPasseport) {
