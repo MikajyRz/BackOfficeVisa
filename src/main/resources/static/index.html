@@ -89,7 +89,7 @@
 <body>
 
 <div class="header">
-  <h1>Back Office Visa — Madagascar</h1>
+  <h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1>
   <nav>
     <a href="index.html" style="opacity:1; border-bottom: 2px solid #fff; padding-bottom: 3px;">Nouvelle demande</a>
     <a href="demandes.html">Liste des demandes</a>
@@ -624,6 +624,7 @@
       document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
       document.getElementById('step-result').classList.add('active');
       document.querySelectorAll('.step-indicator').forEach(s => s.classList.add('done'));
+      setTimeout(() => window.location.href = 'signature.html?id=' + dataCreate.id, 1200);
     } catch (e) {
       showAlert(e.message, 'error');
       btn.disabled = false;

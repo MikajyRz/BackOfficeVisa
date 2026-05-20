@@ -48,7 +48,7 @@
 <body>
 
 <div class="header">
-  <h1>Back Office Visa — Madagascar</h1>
+  <h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1>
   <nav>
     <a href="index.html">Nouvelle demande</a>
     <a href="demandes.html">Liste des demandes</a>
@@ -411,8 +411,9 @@
 
       if (resp.ok) {
         const data = await resp.json();
-        showAlert("Demande de duplicata créée avec succès ! Vous pouvez maintenant la valider dans la liste des demandes.");
-        setTimeout(() => window.location.href = 'demandes.html', 2000);
+        const demandeId = data.demande ? data.demande.id : data.id;
+        showAlert("Demande de duplicata creee avec succes ! Importez maintenant les pieces justificatives pour scanner le dossier.");
+        setTimeout(() => window.location.href = 'signature.html?id=' + demandeId, 1500);
       } else {
         const err = await resp.json();
         showAlert("Erreur : " + (err.error || "Impossible de créer la demande"), "error");
@@ -476,7 +477,15 @@
 
       if (resp.ok) {
         const d = await resp.json();
-        currentDemandeOrigine = d;
+        const rechercheResp = await fetch(`/api/cartes-resident/duplicata/recherche?critere=${d.id}`);
+        if (rechercheResp.ok) {
+          const result = await rechercheResp.json();
+          currentDemandeOrigine = result.demande;
+          currentCarteOrigine = result.carte;
+        } else {
+          currentDemandeOrigine = d;
+          currentCarteOrigine = null;
+        }
         showAlert("Dossier antérieur créé avec succès ! Passage au formulaire de duplicata.");
         setTimeout(() => {
           document.getElementById('case-2-section').style.display = 'none';

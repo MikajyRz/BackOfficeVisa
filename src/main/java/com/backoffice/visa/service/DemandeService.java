@@ -7,7 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class DemandeService {
@@ -27,6 +31,7 @@ public class DemandeService {
     private final VisaRepository visaRepository;
     private final CarteResidentRepository carteResidentRepository;
     private final VisaTransformableRepository visaTransformableRepository;
+    private final SignatureService signatureService;
 
     public DemandeService(
             DemandeurRepository demandeurRepository,
@@ -43,7 +48,8 @@ public class DemandeService {
             PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository,
             VisaRepository visaRepository,
             CarteResidentRepository carteResidentRepository,
-            VisaTransformableRepository visaTransformableRepository) {
+            VisaTransformableRepository visaTransformableRepository,
+            SignatureService signatureService) {
         this.demandeurRepository = demandeurRepository;
         this.passeportRepository = passeportRepository;
         this.demandeRepository = demandeRepository;
@@ -59,6 +65,7 @@ public class DemandeService {
         this.visaRepository = visaRepository;
         this.carteResidentRepository = carteResidentRepository;
         this.visaTransformableRepository = visaTransformableRepository;
+        this.signatureService = signatureService;
     }
 
     /**
@@ -168,29 +175,9 @@ public class DemandeService {
         }
 
         // 5. Enregistrer les pièces communes
-        List<TypePieceCommune> toutesCommunes = typePieceCommuneRepository.findAll();
-        for (TypePieceCommune type : toutesCommunes) {
-            PieceDemande piece = new PieceDemande();
-            piece.setDemande(demande);
-            piece.setTypePieceCommune(type);
-            boolean presente = form.getPiecesCommunesPresentes() != null
-                    && form.getPiecesCommunesPresentes().contains(type.getId());
-            piece.setPresente(presente);
-            pieceDemandeRepository.save(piece);
-        }
+        creerPiecesPourDemande(demande, form.getPiecesCommunesPresentes(), form.getPiecesSpecifiquesPresentes());
 
         // 6. Enregistrer les pièces spécifiques au type de visa
-        List<TypePieceSpecifique> specifiques = typePieceSpecifiqueRepository.findByTypeVisaId(form.getIdTypeVisa());
-        for (TypePieceSpecifique type : specifiques) {
-            PieceDemandeSpecifique piece = new PieceDemandeSpecifique();
-            piece.setDemande(demande);
-            piece.setTypePieceSpecifique(type);
-            boolean presente = form.getPiecesSpecifiquesPresentes() != null
-                    && form.getPiecesSpecifiquesPresentes().contains(type.getId());
-            piece.setPresente(presente);
-            pieceDemandeSpecifiqueRepository.save(piece);
-        }
-
         // 7. Vérifier que toutes les pièces obligatoires sont fournies → "Dossier créé"
         boolean toutesObligatoiresFournies = verifierPiecesObligatoires(demande.getId());
         if (!toutesObligatoiresFournies) {
@@ -201,6 +188,62 @@ public class DemandeService {
         enregistrerChangementStatut(demande, 1);
 
         return demande;
+    }
+
+    /**
+     * Initialise les pieces a importer pour une demande creee par un workflow annexe
+     * (duplicata, transfert). Les fichiers seront importes ensuite depuis upload.html.
+     */
+    @Transactional
+    public void initialiserPiecesPourUpload(Demande demande) {
+        creerPiecesPourDemande(demande, Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Transactional
+    public void initialiserPiecesPourUpload(Long demandeId) {
+        Demande demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new RuntimeException("Demande introuvable"));
+        initialiserPiecesPourUpload(demande);
+    }
+
+    private void creerPiecesPourDemande(Demande demande, List<Long> piecesCommunesPresentes, List<Long> piecesSpecifiquesPresentes) {
+        Set<Long> communesPresentes = piecesCommunesPresentes == null
+                ? Collections.emptySet()
+                : new HashSet<>(piecesCommunesPresentes);
+        Set<Long> specifiquesPresentes = piecesSpecifiquesPresentes == null
+                ? Collections.emptySet()
+                : new HashSet<>(piecesSpecifiquesPresentes);
+
+        Set<Long> communesExistantes = pieceDemandeRepository.findByDemandeId(demande.getId()).stream()
+                .map(p -> p.getTypePieceCommune().getId())
+                .collect(Collectors.toSet());
+        Set<Long> specifiquesExistantes = pieceDemandeSpecifiqueRepository.findByDemandeId(demande.getId()).stream()
+                .map(p -> p.getTypePieceSpecifique().getId())
+                .collect(Collectors.toSet());
+
+        List<TypePieceCommune> toutesCommunes = typePieceCommuneRepository.findAll();
+        for (TypePieceCommune type : toutesCommunes) {
+            if (communesExistantes.contains(type.getId())) {
+                continue;
+            }
+            PieceDemande piece = new PieceDemande();
+            piece.setDemande(demande);
+            piece.setTypePieceCommune(type);
+            piece.setPresente(communesPresentes.contains(type.getId()));
+            pieceDemandeRepository.save(piece);
+        }
+
+        List<TypePieceSpecifique> specifiques = typePieceSpecifiqueRepository.findByTypeVisaId(demande.getTypeVisa().getId());
+        for (TypePieceSpecifique type : specifiques) {
+            if (specifiquesExistantes.contains(type.getId())) {
+                continue;
+            }
+            PieceDemandeSpecifique piece = new PieceDemandeSpecifique();
+            piece.setDemande(demande);
+            piece.setTypePieceSpecifique(type);
+            piece.setPresente(specifiquesPresentes.contains(type.getId()));
+            pieceDemandeSpecifiqueRepository.save(piece);
+        }
     }
 
     /**
@@ -231,17 +274,30 @@ public class DemandeService {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
-        if (demande.getStatut() != 1) {
-            throw new RuntimeException("Seul un dossier au statut 'Dossier créé' peut être scanné.");
+        int nouveauStatut;
+        if (demande.getStatut() == Demande.STATUT_SIGNATURE_TERMINEE) {
+            nouveauStatut = Demande.STATUT_SCANNE;
+        } else if (demande.getStatut() == Demande.STATUT_DUPLICATA_SIGNATURE_TERMINEE) {
+            nouveauStatut = Demande.STATUT_DUPLICATA_SCANNE;
+        } else if (demande.getStatut() == Demande.STATUT_TRANSFERT_SIGNATURE_TERMINEE) {
+            nouveauStatut = Demande.STATUT_TRANSFERT_SCANNE;
+        } else {
+            throw new RuntimeException("Ce dossier ne peut pas etre scanne depuis le statut actuel : " + demande.getStatutLibelle());
         }
 
         // On vérifie une dernière fois que toutes les pièces obligatoires sont présentes avec un fichier
+        initialiserPiecesPourUpload(demande);
+
+        if (!signatureService.captureExiste(demandeId)) {
+            throw new RuntimeException("La photo et la signature doivent etre enregistrees avant de scanner.");
+        }
+
         if (!verifierToutesPiecesImportees(demandeId)) {
             throw new RuntimeException("Toutes les pièces obligatoires doivent avoir un fichier importé avant de scanner.");
         }
 
-        demande.setStatut(3); // Scan terminé
-        enregistrerChangementStatut(demande, 3);
+        demande.setStatut(nouveauStatut);
+        enregistrerChangementStatut(demande, nouveauStatut);
         return demandeRepository.save(demande);
     }
 
@@ -272,13 +328,13 @@ public class DemandeService {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
-        if (demande.getStatut() != 3) {
-            throw new RuntimeException("Le dossier doit être au statut 'Scan terminé' avant d'être terminé. Statut actuel : " + demande.getStatutLibelle());
+        if (demande.getStatut() != Demande.STATUT_SCANNE) {
+            throw new RuntimeException("Le dossier doit être scanné avant d'être terminé. Statut actuel : " + demande.getStatutLibelle());
         }
 
-        demande.setStatut(2); // Dossier terminé
+        demande.setStatut(Demande.STATUT_TERMINE); // Nouveau statut 3
         demande.setDateTraitement(LocalDate.now());
-        enregistrerChangementStatut(demande, 2);
+        enregistrerChangementStatut(demande, Demande.STATUT_TERMINE);
         demande = demandeRepository.save(demande);
 
         // Créer automatiquement la carte de résident
@@ -317,6 +373,17 @@ public class DemandeService {
      */
     public List<Demande> getAllDemandes() {
         return demandeRepository.findAll();
+    }
+
+    public List<Demande> searchDemandes(String query) {
+        if (query == null || query.isBlank()) {
+            return getAllDemandes();
+        }
+        return demandeRepository.searchByIdOrPasseport(query.trim());
+    }
+
+    public List<StatutDemande> getHistorique(Long demandeId) {
+        return statutDemandeRepository.findByDemandeIdOrderByIdDesc(demandeId);
     }
 
     public boolean numeroPasseportDejaUtilise(String numeroPasseport) {

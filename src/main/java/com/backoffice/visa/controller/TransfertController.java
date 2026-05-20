@@ -47,16 +47,34 @@ public class TransfertController {
         }
     }
 
+    @PutMapping("/{id}/scanner")
+    public ResponseEntity<?> scanner(@PathVariable("id") Long id) {
+        try {
+            transfertService.scannerTransfert(id);
+            return ResponseEntity.ok(Map.of("message", "Demande de transfert scannee"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PutMapping("/{id}/valider")
     public ResponseEntity<?> valider(@PathVariable("id") Long id) {
-        transfertService.validerTransfert(id);
-        return ResponseEntity.ok().build();
+        try {
+            transfertService.validerTransfert(id);
+            return ResponseEntity.ok(Map.of("message", "Demande de transfert validee"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}/rejeter")
     public ResponseEntity<?> rejeter(@PathVariable("id") Long id) {
-        transfertService.rejeterTransfert(id);
-        return ResponseEntity.ok().build();
+        try {
+            transfertService.rejeterTransfert(id);
+            return ResponseEntity.ok(Map.of("message", "Demande de transfert rejetee"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}/emettre")

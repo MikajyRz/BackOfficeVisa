@@ -50,7 +50,7 @@
 <body>
 
 <div class="header">
-  <h1>Back Office Visa — Madagascar</h1>
+  <h1>Back Office Visa — Madagascar (ETU3188 - 3214 - 3210)</h1>
   <nav>
     <a href="index.html">Nouvelle demande</a>
     <a href="demandes.html">Liste des demandes</a>
@@ -455,8 +455,10 @@
         body: JSON.stringify(payload)
       });
       if (resp.ok) {
-        showAlert("Demande de transfert créée !");
-        setTimeout(() => window.location.href = 'demandes.html', 2000);
+        const data = await resp.json();
+        const demandeId = data.demande ? data.demande.id : data.id;
+        showAlert("Demande de transfert creee ! Importez maintenant les pieces justificatives pour scanner le dossier.");
+        setTimeout(() => window.location.href = 'signature.html?id=' + demandeId, 1500);
       } else {
         const err = await resp.json();
         showAlert("Erreur : " + (err.error || "Échec"), "error");

@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface StatutDemandeRepository extends JpaRepository<StatutDemande, Long> {
     List<StatutDemande> findByDemandeIdOrderByDateChangementStatutDesc(Long demandeId);
+    List<StatutDemande> findByDemandeIdOrderByIdDesc(Long demandeId);
 }
