@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Photo et signature - Back Office Visa</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; }
+    .header { background: linear-gradient(135deg, #1a5276, #2980b9); color: #fff; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.4em; }
+    .header nav a { color: #fff; text-decoration: none; margin-left: 20px; font-weight: 600; opacity: 0.85; }
+    .header nav a:hover { opacity: 1; }
+    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+    .card { background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); padding: 25px; margin-bottom: 20px; }
+    .card h2, .card h3 { color: #1a5276; margin-bottom: 15px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .panel { border: 1px solid #e1e7ec; border-radius: 8px; padding: 16px; background: #fbfcfd; }
+    video, canvas, .preview { width: 100%; border-radius: 8px; background: #eef2f6; border: 1px solid #d8e0e7; }
+    video, .preview { aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+    #signature-pad { height: 260px; touch-action: none; cursor: crosshair; background: #fff; }
+    .preview { display: none; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .btn { padding: 11px 20px; border: none; border-radius: 6px; font-size: 0.92em; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn-primary { background: #2980b9; color: #fff; }
+    .btn-success { background: #27ae60; color: #fff; }
+    .btn-secondary { background: #95a5a6; color: #fff; }
+    .btn-danger { background: #e74c3c; color: #fff; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .alert { padding: 12px 18px; border-radius: 8px; margin-bottom: 15px; font-weight: 500; display: none; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .info-item .label { font-size: .8em; color: #777; text-transform: uppercase; font-weight: 700; margin-bottom: 3px; }
+    .info-item .value { font-weight: 600; }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; gap: 10px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>Back Office Visa - Madagascar (ETU3188 - 3214 - 3210)</h1>
+  <nav>
+    <a href="index.html">Nouvelle demande</a>
+    <a href="demandes.html">Liste des demandes</a>
+    <a href="duplicata.html">Duplicata</a>
+    <a href="transfert.html">Transfert</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div id="alert" class="alert"></div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h2 id="page-title">Photo et signature</h2>
+        <div class="info-grid">
+          <div class="info-item"><div class="label">Demande</div><div class="value" id="info-id">-</div></div>
+          <div class="info-item"><div class="label">Demandeur</div><div class="value" id="info-demandeur">-</div></div>
+          <div class="info-item"><div class="label">Statut</div><div class="value" id="info-statut">-</div></div>
+        </div>
+      </div>
+      <a class="btn btn-secondary" id="link-detail" href="#">Retour detail</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Photo webcam</h3>
+      <div class="panel">
+        <video id="video" autoplay playsinline muted></video>
+        <img id="photo-preview" class="preview" alt="Photo capturee" />
+        <canvas id="photo-canvas" style="display:none;"></canvas>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-start" onclick="demarrerCamera()">Activer camera</button>
+          <button class="btn btn-success" id="btn-photo" onclick="capturerPhoto()" disabled>Capturer photo</button>
+          <button class="btn btn-secondary" onclick="reprendrePhoto()">Reprendre</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Signature</h3>
+      <div class="panel">
+        <canvas id="signature-pad"></canvas>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="effacerSignature()">Effacer signature</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="text-align:right;">
+    <button class="btn btn-success" id="btn-save" onclick="enregistrer()" disabled>Valider la signature</button>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const demandeId = params.get('id');
+  const video = document.getElementById('video');
+  const photoPreview = document.getElementById('photo-preview');
+  const photoCanvas = document.getElementById('photo-canvas');
+  const signatureCanvas = document.getElementById('signature-pad');
+  const signatureCtx = signatureCanvas.getContext('2d');
+  let stream = null;
+  let photoBlob = null;
+  let signatureTracee = false;
+  let drawing = false;
+  let lastPoint = null;
+
+  if (!demandeId) {
+    window.location.href = 'demandes.html';
+  }
+
+  document.getElementById('link-detail').href = 'detail.html?id=' + demandeId;
+
+  async function chargerDemande() {
+    try {
+      const res = await fetch('/api/demandes/' + demandeId);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Demande introuvable');
+      document.getElementById('page-title').textContent = 'Photo et signature - Demande #' + d.id;
+      document.getElementById('info-id').textContent = '#' + d.id;
+      document.getElementById('info-demandeur').textContent = d.demandeur ? d.demandeur.nom + ' ' + d.demandeur.prenom : '-';
+      document.getElementById('info-statut').textContent = d.statutLibelle || d.statut;
+
+      const captureRes = await fetch('/api/demandes/' + demandeId + '/signature');
+      if (captureRes.ok) {
+        const c = await captureRes.json();
+        photoPreview.src = '/api/demandes/signature/fichier/' + c.photoPath;
+        photoPreview.style.display = 'block';
+        video.style.display = 'none';
+        photoBlob = await fetch(photoPreview.src).then(r => r.blob());
+        const img = new Image();
+        img.onload = () => {
+          adapterCanvasSignature();
+          signatureCtx.drawImage(img, 0, 0, signatureCanvas.width, signatureCanvas.height);
+          signatureTracee = true;
+          verifierPret();
+        };
+        img.src = '/api/demandes/signature/fichier/' + c.signaturePath;
+      }
+    } catch (e) {
+      showAlert(e.message, 'error');
+    }
+  }
+
+  async function demarrerCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      video.srcObject = stream;
+      video.style.display = 'block';
+      photoPreview.style.display = 'none';
+      document.getElementById('btn-photo').disabled = false;
+    } catch (e) {
+      showAlert("Impossible d'activer la camera", 'error');
+    }
+  }
+
+  function capturerPhoto() {
+    if (!video.videoWidth) return;
+    photoCanvas.width = video.videoWidth;
+    photoCanvas.height = video.videoHeight;
+    photoCanvas.getContext('2d').drawImage(video, 0, 0);
+    photoCanvas.toBlob(blob => {
+      photoBlob = blob;
+      photoPreview.src = URL.createObjectURL(blob);
+      photoPreview.style.display = 'block';
+      video.style.display = 'none';
+      verifierPret();
+    }, 'image/png');
+  }
+
+  function reprendrePhoto() {
+    photoBlob = null;
+    photoPreview.removeAttribute('src');
+    photoPreview.style.display = 'none';
+    video.style.display = 'block';
+    verifierPret();
+  }
+
+  function adapterCanvasSignature() {
+    const rect = signatureCanvas.getBoundingClientRect();
+    const image = signatureCtx.getImageData(0, 0, signatureCanvas.width || 1, signatureCanvas.height || 1);
+    signatureCanvas.width = Math.max(320, Math.floor(rect.width));
+    signatureCanvas.height = 260;
+    signatureCtx.fillStyle = '#fff';
+    signatureCtx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    if (signatureTracee) {
+      signatureCtx.putImageData(image, 0, 0);
+    }
+    signatureCtx.lineWidth = 2.4;
+    signatureCtx.lineCap = 'round';
+    signatureCtx.strokeStyle = '#111';
+  }
+
+  function position(event) {
+    const rect = signatureCanvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+
+  signatureCanvas.addEventListener('pointerdown', event => {
+    drawing = true;
+    lastPoint = position(event);
+    signatureCanvas.setPointerCapture(event.pointerId);
+  });
+
+  signatureCanvas.addEventListener('pointermove', event => {
+    if (!drawing) return;
+    const point = position(event);
+    signatureCtx.beginPath();
+    signatureCtx.moveTo(lastPoint.x, lastPoint.y);
+    signatureCtx.lineTo(point.x, point.y);
+    signatureCtx.stroke();
+    lastPoint = point;
+    signatureTracee = true;
+    verifierPret();
+  });
+
+  signatureCanvas.addEventListener('pointerup', () => {
+    drawing = false;
+    lastPoint = null;
+  });
+
+  function effacerSignature() {
+    signatureCtx.fillStyle = '#fff';
+    signatureCtx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    signatureTracee = false;
+    verifierPret();
+  }
+
+  function verifierPret() {
+    document.getElementById('btn-save').disabled = !(photoBlob && signatureTracee);
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function enregistrer() {
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement...';
+    try {
+      const signatureBlob = await canvasToBlob(signatureCanvas);
+      const formData = new FormData();
+      formData.append('photo', photoBlob, 'photo.png');
+      formData.append('signature', signatureBlob, 'signature.png');
+
+      const res = await fetch('/api/demandes/' + demandeId + '/signature', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de la signature');
+      showAlert('Signature terminee avec succes', 'success');
+      setTimeout(() => window.location.href = 'upload.html?id=' + demandeId, 1000);
+    } catch (e) {
+      showAlert(e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Valider la signature';
+    }
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.className = 'alert alert-' + type;
+    el.style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  window.addEventListener('resize', adapterCanvasSignature);
+  adapterCanvasSignature();
+  chargerDemande();
+</script>
+</body>
+</html>

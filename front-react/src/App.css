@@ -35,6 +35,7 @@ tbody tr:hover { background: #ebf5fb; }
 /* Badges */
 .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
 .badge-cree { background: #d4edda; color: #155724; }
+.badge-signature { background: #fff3cd; color: #856404; }
 .badge-termine { background: #d1ecf1; color: #0c5460; }
 .badge-duplicata-demande { background: #fff3cd; color: #856404; }
 .badge-duplicata-scanne { background: #ffe8a1; color: #6b4b00; }

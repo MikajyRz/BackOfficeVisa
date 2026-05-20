@@ -31,6 +31,7 @@ public class DemandeService {
     private final VisaRepository visaRepository;
     private final CarteResidentRepository carteResidentRepository;
     private final VisaTransformableRepository visaTransformableRepository;
+    private final SignatureService signatureService;
 
     public DemandeService(
             DemandeurRepository demandeurRepository,
@@ -47,7 +48,8 @@ public class DemandeService {
             PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository,
             VisaRepository visaRepository,
             CarteResidentRepository carteResidentRepository,
-            VisaTransformableRepository visaTransformableRepository) {
+            VisaTransformableRepository visaTransformableRepository,
+            SignatureService signatureService) {
         this.demandeurRepository = demandeurRepository;
         this.passeportRepository = passeportRepository;
         this.demandeRepository = demandeRepository;
@@ -63,6 +65,7 @@ public class DemandeService {
         this.visaRepository = visaRepository;
         this.carteResidentRepository = carteResidentRepository;
         this.visaTransformableRepository = visaTransformableRepository;
+        this.signatureService = signatureService;
     }
 
     /**
@@ -272,11 +275,11 @@ public class DemandeService {
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
         int nouveauStatut;
-        if (demande.getStatut() == Demande.STATUT_CREATION) {
+        if (demande.getStatut() == Demande.STATUT_SIGNATURE_TERMINEE) {
             nouveauStatut = Demande.STATUT_SCANNE;
-        } else if (demande.getStatut() == Demande.STATUT_DUPLICATA_DEMANDE) {
+        } else if (demande.getStatut() == Demande.STATUT_DUPLICATA_SIGNATURE_TERMINEE) {
             nouveauStatut = Demande.STATUT_DUPLICATA_SCANNE;
-        } else if (demande.getStatut() == Demande.STATUT_TRANSFERT_DEMANDE) {
+        } else if (demande.getStatut() == Demande.STATUT_TRANSFERT_SIGNATURE_TERMINEE) {
             nouveauStatut = Demande.STATUT_TRANSFERT_SCANNE;
         } else {
             throw new RuntimeException("Ce dossier ne peut pas etre scanne depuis le statut actuel : " + demande.getStatutLibelle());
@@ -284,6 +287,10 @@ public class DemandeService {
 
         // On vérifie une dernière fois que toutes les pièces obligatoires sont présentes avec un fichier
         initialiserPiecesPourUpload(demande);
+
+        if (!signatureService.captureExiste(demandeId)) {
+            throw new RuntimeException("La photo et la signature doivent etre enregistrees avant de scanner.");
+        }
 
         if (!verifierToutesPiecesImportees(demandeId)) {
             throw new RuntimeException("Toutes les pièces obligatoires doivent avoir un fichier importé avant de scanner.");

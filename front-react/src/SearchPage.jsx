@@ -33,18 +33,21 @@ export default function SearchPage() {
   const getBadgeClass = (statut) => {
     switch(statut) {
       case 1: return 'badge-cree';
-      case 2: return 'badge-termine';
+      case 2: return 'badge-signature';
       case 3: return 'badge-termine';
+      case 4: return 'badge-termine';
       case 10: return 'badge-duplicata-demande';
-      case 11: return 'badge-duplicata-scanne';
-      case 12: return 'badge-duplicata-valide';
-      case 13: return 'badge-duplicata-rejete';
-      case 14: return 'badge-duplicata-emis';
+      case 11: return 'badge-signature';
+      case 12: return 'badge-duplicata-scanne';
+      case 13: return 'badge-duplicata-valide';
+      case 14: return 'badge-duplicata-rejete';
+      case 15: return 'badge-duplicata-emis';
       case 20: return 'badge-transfert-demande';
-      case 21: return 'badge-transfert-scanne';
-      case 22: return 'badge-transfert-valide';
-      case 23: return 'badge-transfert-rejete';
-      case 24: return 'badge-transfert-emis';
+      case 21: return 'badge-signature';
+      case 22: return 'badge-transfert-scanne';
+      case 23: return 'badge-transfert-valide';
+      case 24: return 'badge-transfert-rejete';
+      case 25: return 'badge-transfert-emis';
       default: return '';
     }
   };

@@ -1,10 +1,11 @@
 -- =============================================
--- BASE DE DONNÉES VISA - PostgreSQL
+-- BASE DE DONNÃ‰ES VISA - PostgreSQL
 -- =============================================
 
--- Suppression des données
+-- Suppression des donnÃ©es
 DELETE FROM Piece_demande_specifique;
 DELETE FROM Piece_demande;
+DELETE FROM Capture_signature;
 DELETE FROM Historique_passeport_visa;
 DELETE FROM carte_resident;
 DELETE FROM Visa;
@@ -24,6 +25,7 @@ DELETE FROM Nationalite;
 -- Suppression des tables
 DROP TABLE IF EXISTS Piece_demande_specifique;
 DROP TABLE IF EXISTS Piece_demande;
+DROP TABLE IF EXISTS Capture_signature;
 DROP TABLE IF EXISTS Historique_passeport_visa;
 DROP TABLE IF EXISTS carte_resident;
 DROP TABLE IF EXISTS Visa;
@@ -131,6 +133,15 @@ CREATE TABLE Statut_demande (
     FOREIGN KEY (statut) REFERENCES Statut(id)
 );
 
+CREATE TABLE Capture_signature (
+    id SERIAL PRIMARY KEY,
+    id_demande INT NOT NULL UNIQUE,
+    photo_path VARCHAR(255) NOT NULL,
+    signature_path VARCHAR(255) NOT NULL,
+    date_capture TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_demande) REFERENCES Demande(id)
+);
+
 CREATE TABLE Type_piece_commune (
     id SERIAL PRIMARY KEY,
     libelle VARCHAR(150) NOT NULL,
@@ -150,6 +161,7 @@ CREATE TABLE Piece_demande (
     id_demande INT NOT NULL,
     id_type_piece_commune INT NOT NULL,
     presente BOOLEAN DEFAULT FALSE,
+    fichier_path VARCHAR(255),
     FOREIGN KEY (id_demande) REFERENCES Demande(id),
     FOREIGN KEY (id_type_piece_commune) REFERENCES Type_piece_commune(id),
     UNIQUE (id_demande, id_type_piece_commune)
@@ -160,6 +172,7 @@ CREATE TABLE Piece_demande_specifique (
     id_demande INT NOT NULL,
     id_type_piece INT NOT NULL,
     presente BOOLEAN DEFAULT FALSE,
+    fichier_path VARCHAR(255),
     FOREIGN KEY (id_demande) REFERENCES Demande(id),
     FOREIGN KEY (id_type_piece) REFERENCES Type_piece_specifique(id),
     UNIQUE (id_demande, id_type_piece)
@@ -198,47 +211,50 @@ CREATE TABLE Historique_passeport_visa (
     FOREIGN KEY (id_nouveau_passeport) REFERENCES Passeport(id)
 );
 
--- Index pour les recherches fréquentes
+-- Index pour les recherches frÃ©quentes
 CREATE INDEX idx_demande_statut ON Demande(id_statut);
 CREATE INDEX idx_demande_demandeur ON Demande(id_demandeur);
 
 -- =============================================
--- DONNÉES DE RÉFÉRENCE
+-- DONNÃ‰ES DE RÃ‰FÃ‰RENCE
 -- =============================================
 
-INSERT INTO Nationalite (libelle) VALUES ('Française'), ('Malgache'), ('Chinoise'), ('Indienne'), ('Comorienne'), ('Autre');
+INSERT INTO Nationalite (libelle) VALUES ('FranÃ§aise'), ('Malgache'), ('Chinoise'), ('Indienne'), ('Comorienne'), ('Autre');
 
-INSERT INTO Situation_familiale (libelle) VALUES ('Célibataire'), ('Marié(e)'), ('Divorcé(e)'), ('Veuf/Veuve');
+INSERT INTO Situation_familiale (libelle) VALUES ('CÃ©libataire'), ('MariÃ©(e)'), ('DivorcÃ©(e)'), ('Veuf/Veuve');
 
 INSERT INTO type_visa (libelle) VALUES ('Investisseur'), ('Travailleur');
 
 INSERT INTO Type_demande (libelle) VALUES ('Nouveau titre'), ('Duplicata'), ('Transfert de visa');
 
 INSERT INTO Statut (id, code, libelle, ordre_affichage) VALUES
-(1, 'CREATION', 'Dossier créé', 1),
-(2, 'SCANNE', 'Dossier scanné', 2),
-(3, 'TERMINE', 'Dossier terminé', 3),
-(10, 'DUPLICATA_DEMANDE', 'Duplicata demandé', 10),
-(11, 'DUPLICATA_SCANNE', 'Duplicata scanné', 11),
-(12, 'DUPLICATA_VALIDE', 'Duplicata validé', 12),
-(13, 'DUPLICATA_REJETE', 'Duplicata rejeté', 13),
-(14, 'DUPLICATA_EMIS', 'Duplicata émis', 14),
-(20, 'TRANSFERT_DEMANDE', 'Transfert demandé', 20),
-(21, 'TRANSFERT_SCANNE', 'Transfert scanné', 21),
-(22, 'TRANSFERT_VALIDE', 'Transfert validé', 22),
-(23, 'TRANSFERT_REJETE', 'Transfert rejeté', 23),
-(24, 'TRANSFERT_EMIS', 'Transfert émis', 24);
+(1, 'CREATION', 'Dossier cree', 1),
+(2, 'SIGNATURE_TERMINEE', 'Signature terminee', 2),
+(3, 'SCANNE', 'Dossier scanne', 3),
+(4, 'TERMINE', 'Dossier termine', 4),
+(10, 'DUPLICATA_DEMANDE', 'Duplicata demande', 10),
+(11, 'DUPLICATA_SIGNATURE_TERMINEE', 'Duplicata signature terminee', 11),
+(12, 'DUPLICATA_SCANNE', 'Duplicata scanne', 12),
+(13, 'DUPLICATA_VALIDE', 'Duplicata valide', 13),
+(14, 'DUPLICATA_REJETE', 'Duplicata rejete', 14),
+(15, 'DUPLICATA_EMIS', 'Duplicata emis', 15),
+(20, 'TRANSFERT_DEMANDE', 'Transfert demande', 20),
+(21, 'TRANSFERT_SIGNATURE_TERMINEE', 'Transfert signature terminee', 21),
+(22, 'TRANSFERT_SCANNE', 'Transfert scanne', 22),
+(23, 'TRANSFERT_VALIDE', 'Transfert valide', 23),
+(24, 'TRANSFERT_REJETE', 'Transfert rejete', 24),
+(25, 'TRANSFERT_EMIS', 'Transfert emis', 25);
 
 INSERT INTO Type_piece_commune (libelle, obligatoire) VALUES
-('02 photos d''identité récentes', TRUE),
+('02 photos d''identitÃ© rÃ©centes', TRUE),
 ('Notice de renseignement', TRUE),
-('Demande écrite adressée au Ministère de l''Intérieur', TRUE),
-('Photocopie certifiée de la première page du passeport', TRUE),
-('Certificat de résidence ou attestation d''hébergement', TRUE),
+('Demande Ã©crite adressÃ©e au MinistÃ¨re de l''IntÃ©rieur', TRUE),
+('Photocopie certifiÃ©e de la premiÃ¨re page du passeport', TRUE),
+('Certificat de rÃ©sidence ou attestation d''hÃ©bergement', TRUE),
 ('Extrait de casier judiciaire (< 3 mois)', TRUE);
 
 INSERT INTO Type_piece_specifique (libelle, id_type_visa, obligatoire) VALUES
-('Statut de la Société', 1, TRUE),
+('Statut de la SociÃ©tÃ©', 1, TRUE),
 ('Extrait d''inscription au registre de commerce', 1, TRUE),
 ('Carte fiscale', 1, TRUE),
 ('Contrat de travail', 2, TRUE),

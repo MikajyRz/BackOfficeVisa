@@ -111,6 +111,7 @@ public class TransfertService {
 
         boolean aDejaUneDemandeEnCours = demandeRepository.findByDemandeurId(demandeOrigine.getDemandeur().getId()).stream()
                 .anyMatch(d -> d.getStatut() == Demande.STATUT_TRANSFERT_DEMANDE
+                        || d.getStatut() == Demande.STATUT_TRANSFERT_SIGNATURE_TERMINEE
                         || d.getStatut() == Demande.STATUT_TRANSFERT_SCANNE
                         || d.getStatut() == Demande.STATUT_TRANSFERT_VALIDE);
 

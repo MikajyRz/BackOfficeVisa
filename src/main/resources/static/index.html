@@ -624,6 +624,7 @@
       document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
       document.getElementById('step-result').classList.add('active');
       document.querySelectorAll('.step-indicator').forEach(s => s.classList.add('done'));
+      setTimeout(() => window.location.href = 'signature.html?id=' + dataCreate.id, 1200);
     } catch (e) {
       showAlert(e.message, 'error');
       btn.disabled = false;

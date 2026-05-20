@@ -29,6 +29,7 @@
 
     .badge { display: inline-block; padding: 6px 16px; border-radius: 14px; font-size: 0.85em; font-weight: 600; }
     .badge-cree { background: #d4edda; color: #155724; }
+    .badge-signature { background: #fff3cd; color: #856404; }
     .badge-termine { background: #d1ecf1; color: #0c5460; }
     .badge-duplicata-scanne { background: #ffe8a1; color: #6b4b00; }
     .badge-transfert-scanne { background: #e8d7f2; color: #5e2477; }
@@ -234,18 +235,21 @@
       const badgeEl = document.getElementById('badge-statut');
       const statusMap = {
         1: { text: 'Dossier cree', class: 'badge-cree' },
-        2: { text: 'Dossier scanne', class: 'badge-termine' },
-        3: { text: 'Dossier termine', class: 'badge-termine' },
+        2: { text: 'Signature terminee', class: 'badge-signature' },
+        3: { text: 'Dossier scanne', class: 'badge-termine' },
+        4: { text: 'Dossier termine', class: 'badge-termine' },
         10: { text: 'Duplicata demande', class: 'badge-cree' },
-        11: { text: 'Duplicata scanne', class: 'badge-duplicata-scanne' },
-        12: { text: 'Duplicata valide', class: 'badge-termine' },
-        13: { text: 'Duplicata rejete', class: 'badge-no' },
-        14: { text: 'Duplicata emis', class: 'badge-termine' },
+        11: { text: 'Duplicata signature terminee', class: 'badge-signature' },
+        12: { text: 'Duplicata scanne', class: 'badge-duplicata-scanne' },
+        13: { text: 'Duplicata valide', class: 'badge-termine' },
+        14: { text: 'Duplicata rejete', class: 'badge-no' },
+        15: { text: 'Duplicata emis', class: 'badge-termine' },
         20: { text: 'Transfert demande', class: 'badge-cree' },
-        21: { text: 'Transfert scanne', class: 'badge-transfert-scanne' },
-        22: { text: 'Transfert valide', class: 'badge-termine' },
-        23: { text: 'Transfert rejete', class: 'badge-no' },
-        24: { text: 'Transfert emis', class: 'badge-termine' }
+        21: { text: 'Transfert signature terminee', class: 'badge-signature' },
+        22: { text: 'Transfert scanne', class: 'badge-transfert-scanne' },
+        23: { text: 'Transfert valide', class: 'badge-termine' },
+        24: { text: 'Transfert rejete', class: 'badge-no' },
+        25: { text: 'Transfert emis', class: 'badge-termine' }
       };
       const s = statusMap[d.statut] || { text: 'Inconnu (' + d.statut + ')', class: '' };
       badgeEl.textContent = s.text;
@@ -258,31 +262,38 @@
       let actionsHtml = '<a class="btn btn-secondary" href="demandes.html">← Retour</a> ';
       
       if (d.statut === 1) {
+        actionsHtml += '<a class="btn btn-success" href="signature.html?id=' + demandeId + '">Signer</a>';
         // Au statut 1, on ne peut que aller vers l'import (déjà un gros bouton au milieu)
         // Mais on pourrait remettre un petit rappel ici si tu veux.
       } else if (d.statut === 2) {
+        actionsHtml += '<a class="btn btn-success" href="upload.html?id=' + demandeId + '">Importer les pieces</a>';
+      } else if (d.statut === 3) {
         // Au statut 2 (Dossier scanné), on peut enfin terminer le dossier
         actionsHtml += '<button class="btn btn-success" onclick="terminerDossier()">Terminer le dossier</button>';
       } else if (d.statut === 10) {
-        actionsHtml += '<a class="btn btn-success" href="upload.html?id=' + demandeId + '">Importer les pieces</a>';
+        actionsHtml += '<a class="btn btn-success" href="signature.html?id=' + demandeId + '">Signer</a>';
       } else if (d.statut === 11) {
+        actionsHtml += '<a class="btn btn-success" href="upload.html?id=' + demandeId + '">Importer les pieces</a>';
+      } else if (d.statut === 12) {
         actionsHtml += '<button class="btn btn-success" onclick="validerDuplicata()">Valider</button> ';
         actionsHtml += '<button class="btn btn-secondary" style="background:#e74c3c" onclick="rejeterDuplicata()">Rejeter</button>';
-      } else if (d.statut === 12) {
+      } else if (d.statut === 13) {
         actionsHtml += '<button class="btn btn-success" onclick="emettreDuplicata()">Emettre le duplicata</button>';
       } else if (d.statut === 20) {
-        actionsHtml += '<a class="btn btn-success" href="upload.html?id=' + demandeId + '">Importer les pieces</a>';
+        actionsHtml += '<a class="btn btn-success" href="signature.html?id=' + demandeId + '">Signer</a>';
       } else if (d.statut === 21) {
+        actionsHtml += '<a class="btn btn-success" href="upload.html?id=' + demandeId + '">Importer les pieces</a>';
+      } else if (d.statut === 22) {
         actionsHtml += '<button class="btn btn-success" onclick="validerTransfert()">Valider</button> ';
         actionsHtml += '<button class="btn btn-secondary" style="background:#e74c3c" onclick="rejeterTransfert()">Rejeter</button>';
-      } else if (d.statut === 22) {
+      } else if (d.statut === 23) {
         actionsHtml += '<button class="btn btn-success" onclick="emettreTransfert()">Emettre le transfert</button>';
       }
       
       actionsDiv.innerHTML = actionsHtml;
 
       // Détails spécifiques Transfert
-      if (d.statut >= 20 && d.statut <= 24) {
+      if (d.statut >= 20 && d.statut <= 25) {
         try {
           const transRes = await fetch('/api/cartes-resident/transfert/demande/' + d.id);
           if (transRes.ok) {
@@ -296,7 +307,7 @@
         } catch(e) {}
       }
 
-      if (d.statut >= 10 && d.statut <= 14) {
+      if (d.statut >= 10 && d.statut <= 15) {
         try {
           const dupRes = await fetch('/api/cartes-resident/duplicata/demande/' + d.id);
           if (dupRes.ok) {

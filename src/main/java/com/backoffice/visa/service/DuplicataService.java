@@ -112,6 +112,7 @@ public class DuplicataService {
         // RÈGLE : Pas de demande de duplicata déjà en cours pour ce demandeur
         boolean aDejaUneDemandeEnCours = demandeRepository.findByDemandeurId(demandeOrigine.getDemandeur().getId()).stream()
                 .anyMatch(d -> d.getStatut() == Demande.STATUT_DUPLICATA_DEMANDE
+                        || d.getStatut() == Demande.STATUT_DUPLICATA_SIGNATURE_TERMINEE
                         || d.getStatut() == Demande.STATUT_DUPLICATA_SCANNE
                         || d.getStatut() == Demande.STATUT_DUPLICATA_VALIDE);
         

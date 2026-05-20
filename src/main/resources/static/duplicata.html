@@ -413,7 +413,7 @@
         const data = await resp.json();
         const demandeId = data.demande ? data.demande.id : data.id;
         showAlert("Demande de duplicata creee avec succes ! Importez maintenant les pieces justificatives pour scanner le dossier.");
-        setTimeout(() => window.location.href = 'upload.html?id=' + demandeId, 1500);
+        setTimeout(() => window.location.href = 'signature.html?id=' + demandeId, 1500);
       } else {
         const err = await resp.json();
         showAlert("Erreur : " + (err.error || "Impossible de créer la demande"), "error");

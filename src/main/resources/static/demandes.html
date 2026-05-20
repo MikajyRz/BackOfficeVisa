@@ -33,6 +33,7 @@
 
     .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
     .badge-cree { background: #d4edda; color: #155724; }
+    .badge-signature { background: #fff3cd; color: #856404; }
     .badge-termine { background: #d1ecf1; color: #0c5460; }
     .badge-duplicata-demande { background: #fff3cd; color: #856404; }
     .badge-duplicata-scanne { background: #ffe8a1; color: #6b4b00; }
@@ -106,18 +107,21 @@
       <select id="filter-statut" onchange="filtrerDemandes()">
         <option value="">Tous les statuts</option>
         <option value="1">Dossier cree</option>
-        <option value="2">Dossier scanne</option>
-        <option value="3">Dossier termine</option>
+        <option value="2">Signature terminee</option>
+        <option value="3">Dossier scanne</option>
+        <option value="4">Dossier termine</option>
         <option value="10">Duplicata demande</option>
-        <option value="11">Duplicata scanne</option>
-        <option value="12">Duplicata valide</option>
-        <option value="13">Duplicata rejete</option>
-        <option value="14">Duplicata emis</option>
+        <option value="11">Duplicata signature terminee</option>
+        <option value="12">Duplicata scanne</option>
+        <option value="13">Duplicata valide</option>
+        <option value="14">Duplicata rejete</option>
+        <option value="15">Duplicata emis</option>
         <option value="20">Transfert demande</option>
-        <option value="21">Transfert scanne</option>
-        <option value="22">Transfert valide</option>
-        <option value="23">Transfert rejete</option>
-        <option value="24">Transfert emis</option>
+        <option value="21">Transfert signature terminee</option>
+        <option value="22">Transfert scanne</option>
+        <option value="23">Transfert valide</option>
+        <option value="24">Transfert rejete</option>
+        <option value="25">Transfert emis</option>
       </select>
       <select id="filter-type-demande" onchange="filtrerDemandes()">
         <option value="">Tous les types de demande</option>
@@ -184,7 +188,7 @@
       // Stats
       document.getElementById('stat-total').textContent = allDemandes.length;
       document.getElementById('stat-cree').textContent = allDemandes.filter(d => d.statut === 1).length;
-      document.getElementById('stat-termine').textContent = allDemandes.filter(d => d.statut === 3).length;
+      document.getElementById('stat-termine').textContent = allDemandes.filter(d => d.statut === 4).length;
 
       afficherDemandes(allDemandes);
     } catch (e) {
@@ -195,18 +199,21 @@
   function getBadgeClass(statut) {
     switch(statut) {
       case 1: return 'badge-cree';
-      case 2: return 'badge-termine';
+      case 2: return 'badge-signature';
       case 3: return 'badge-termine';
+      case 4: return 'badge-termine';
       case 10: return 'badge-duplicata-demande';
-      case 11: return 'badge-duplicata-scanne';
-      case 12: return 'badge-duplicata-valide';
-      case 13: return 'badge-duplicata-rejete';
-      case 14: return 'badge-duplicata-emis';
+      case 11: return 'badge-signature';
+      case 12: return 'badge-duplicata-scanne';
+      case 13: return 'badge-duplicata-valide';
+      case 14: return 'badge-duplicata-rejete';
+      case 15: return 'badge-duplicata-emis';
       case 20: return 'badge-transfert-demande';
-      case 21: return 'badge-transfert-scanne';
-      case 22: return 'badge-transfert-valide';
-      case 23: return 'badge-transfert-rejete';
-      case 24: return 'badge-transfert-emis';
+      case 21: return 'badge-signature';
+      case 22: return 'badge-transfert-scanne';
+      case 23: return 'badge-transfert-valide';
+      case 24: return 'badge-transfert-rejete';
+      case 25: return 'badge-transfert-emis';
       default: return '';
     }
   }
@@ -225,21 +232,29 @@
     tbody.innerHTML = demandes.map(d => {
       let actions = `<a class="btn btn-outline btn-sm" onclick="event.stopPropagation(); voirDetail(${d.id})">Voir</a> `;
       
-      if (d.statut === 2) {
+      if (d.statut === 1) {
+        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); signerDemande(${d.id})">Signer</button>`;
+      } else if (d.statut === 2) {
+        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+      } else if (d.statut === 3) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); terminerDossier(${d.id})">Terminer</button>`;
       } else if (d.statut === 10) {
-        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); signerDemande(${d.id})">Signer</button>`;
       } else if (d.statut === 11) {
+        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+      } else if (d.statut === 12) {
         actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); validerDuplicata(${d.id})">Valider</button> `;
         actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterDuplicata(${d.id})">Rejeter</button>`;
-      } else if (d.statut === 12) {
+      } else if (d.statut === 13) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreDuplicata(${d.id})">Emettre Carte</button>`;
       } else if (d.statut === 20) {
-        actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+        actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); signerDemande(${d.id})">Signer</button>`;
       } else if (d.statut === 21) {
+        actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+      } else if (d.statut === 22) {
         actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); validerTransfert(${d.id})">Valider</button> `;
         actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterTransfert(${d.id})">Rejeter</button>`;
-      } else if (d.statut === 22) {
+      } else if (d.statut === 23) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreTransfert(${d.id})">Transferer</button>`;
       }
 
@@ -360,6 +375,10 @@
 
   function voirDetail(id) {
     window.location.href = 'detail.html?id=' + id;
+  }
+
+  function signerDemande(id) {
+    window.location.href = 'signature.html?id=' + id;
   }
 
   function importerPieces(id) {

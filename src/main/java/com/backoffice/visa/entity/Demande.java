@@ -22,20 +22,23 @@ public class Demande {
     private Integer statut = STATUT_CREATION;
 
     public static final int STATUT_CREATION = 1;
-    public static final int STATUT_SCANNE = 2;
-    public static final int STATUT_TERMINE = 3;
+    public static final int STATUT_SIGNATURE_TERMINEE = 2;
+    public static final int STATUT_SCANNE = 3;
+    public static final int STATUT_TERMINE = 4;
 
     public static final int STATUT_DUPLICATA_DEMANDE = 10;
-    public static final int STATUT_DUPLICATA_SCANNE = 11;
-    public static final int STATUT_DUPLICATA_VALIDE = 12;
-    public static final int STATUT_DUPLICATA_REJETE = 13;
-    public static final int STATUT_DUPLICATA_EMIS = 14;
+    public static final int STATUT_DUPLICATA_SIGNATURE_TERMINEE = 11;
+    public static final int STATUT_DUPLICATA_SCANNE = 12;
+    public static final int STATUT_DUPLICATA_VALIDE = 13;
+    public static final int STATUT_DUPLICATA_REJETE = 14;
+    public static final int STATUT_DUPLICATA_EMIS = 15;
 
     public static final int STATUT_TRANSFERT_DEMANDE = 20;
-    public static final int STATUT_TRANSFERT_SCANNE = 21;
-    public static final int STATUT_TRANSFERT_VALIDE = 22;
-    public static final int STATUT_TRANSFERT_REJETE = 23;
-    public static final int STATUT_TRANSFERT_EMIS = 24;
+    public static final int STATUT_TRANSFERT_SIGNATURE_TERMINEE = 21;
+    public static final int STATUT_TRANSFERT_SCANNE = 22;
+    public static final int STATUT_TRANSFERT_VALIDE = 23;
+    public static final int STATUT_TRANSFERT_REJETE = 24;
+    public static final int STATUT_TRANSFERT_EMIS = 25;
 
     @ManyToOne
     @JoinColumn(name = "id_statut", nullable = false, insertable = false, updatable = false)
@@ -83,14 +86,17 @@ public class Demande {
         }
         return switch (statut) {
             case STATUT_CREATION -> "Dossier cree";
+            case STATUT_SIGNATURE_TERMINEE -> "Signature terminee";
             case STATUT_SCANNE -> "Dossier scanne";
             case STATUT_TERMINE -> "Dossier termine";
             case STATUT_DUPLICATA_DEMANDE -> "Duplicata demande";
+            case STATUT_DUPLICATA_SIGNATURE_TERMINEE -> "Duplicata signature terminee";
             case STATUT_DUPLICATA_SCANNE -> "Duplicata scanne";
             case STATUT_DUPLICATA_VALIDE -> "Duplicata valide";
             case STATUT_DUPLICATA_REJETE -> "Duplicata rejete";
             case STATUT_DUPLICATA_EMIS -> "Duplicata emis";
             case STATUT_TRANSFERT_DEMANDE -> "Transfert demande";
+            case STATUT_TRANSFERT_SIGNATURE_TERMINEE -> "Transfert signature terminee";
             case STATUT_TRANSFERT_SCANNE -> "Transfert scanne";
             case STATUT_TRANSFERT_VALIDE -> "Transfert valide";
             case STATUT_TRANSFERT_REJETE -> "Transfert rejete";
