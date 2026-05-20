@@ -20,6 +20,7 @@ public class TransfertService {
     private final PasseportRepository passeportRepository;
     private final VisaTransformableRepository visaTransformableRepository;
     private final HistoriquePasseportVisaRepository historiquePasseportVisaRepository;
+    private final DemandeService demandeService;
 
     public TransfertService(DemandeRepository demandeRepository,
                            DemandeTransfertRepository demandeTransfertRepository,
@@ -28,7 +29,8 @@ public class TransfertService {
                            StatutDemandeRepository statutDemandeRepository,
                            PasseportRepository passeportRepository,
                            VisaTransformableRepository visaTransformableRepository,
-                           HistoriquePasseportVisaRepository historiquePasseportVisaRepository) {
+                           HistoriquePasseportVisaRepository historiquePasseportVisaRepository,
+                           DemandeService demandeService) {
         this.demandeRepository = demandeRepository;
         this.demandeTransfertRepository = demandeTransfertRepository;
         this.carteResidentRepository = carteResidentRepository;
@@ -37,6 +39,7 @@ public class TransfertService {
         this.passeportRepository = passeportRepository;
         this.visaTransformableRepository = visaTransformableRepository;
         this.historiquePasseportVisaRepository = historiquePasseportVisaRepository;
+        this.demandeService = demandeService;
     }
 
     public Optional<Demande> rechercherDemandeEligible(String critere) {
@@ -106,6 +109,29 @@ public class TransfertService {
             throw new RuntimeException("Dossier non éligible au transfert");
         }
 
+        boolean aDejaUneDemandeEnCours = demandeRepository.findByDemandeurId(demandeOrigine.getDemandeur().getId()).stream()
+                .anyMatch(d -> d.getStatut() == Demande.STATUT_TRANSFERT_DEMANDE
+                        || d.getStatut() == Demande.STATUT_TRANSFERT_SCANNE
+                        || d.getStatut() == Demande.STATUT_TRANSFERT_VALIDE);
+
+        if (aDejaUneDemandeEnCours) {
+            throw new RuntimeException("Une demande de transfert est deja en cours pour ce demandeur");
+        }
+
+        String nouveauNumeroPasseport = normaliserNumero(form.getNouveauNumeroPasseport());
+        if (nouveauNumeroPasseport == null || nouveauNumeroPasseport.isBlank()) {
+            throw new RuntimeException("Le nouveau numero de passeport est obligatoire");
+        }
+        if (passeportRepository.existsByNumeroPasseport(nouveauNumeroPasseport)) {
+            throw new RuntimeException("Ce numero de passeport est deja utilise");
+        }
+        if (form.getNouvelleDateDelivrance() == null || form.getNouvelleDateExpiration() == null) {
+            throw new RuntimeException("Les dates du nouveau passeport sont obligatoires");
+        }
+        if (!form.getNouvelleDateExpiration().isAfter(form.getNouvelleDateDelivrance())) {
+            throw new RuntimeException("La date d'expiration du nouveau passeport doit etre superieure a la date de delivrance");
+        }
+
         CarteResident carteOrigine = carteResidentRepository.findByDemandeId(demandeOrigine.getId())
                 .orElseThrow(() -> new RuntimeException("Carte d'origine introuvable"));
 
@@ -132,17 +158,30 @@ public class TransfertService {
         detail.setDemande(demandeTransfert);
         detail.setCarteOrigine(carteOrigine);
         detail.setAncienNumeroPasseport(demandeOrigine.getVisaTransformable().getPasseport().getNumeroPasseport());
-        detail.setNouveauNumeroPasseport(form.getNouveauNumeroPasseport());
+        detail.setNouveauNumeroPasseport(nouveauNumeroPasseport);
         detail.setNouveauPaysDelivrance(form.getNouveauPaysDelivrance());
         detail.setNouvelleDateDelivrance(form.getNouvelleDateDelivrance());
         detail.setNouvelleDateExpiration(form.getNouvelleDateExpiration());
         
-        return demandeTransfertRepository.save(detail);
+        DemandeTransfert detailEnregistre = demandeTransfertRepository.save(detail);
+        demandeService.initialiserPiecesPourUpload(demandeTransfert);
+        return detailEnregistre;
+    }
+
+    @Transactional
+    public void scannerTransfert(Long id) {
+        demandeTransfertRepository.findByDemandeId(id)
+                .orElseThrow(() -> new RuntimeException("Details du transfert introuvables"));
+
+        demandeService.scannerDossier(id);
     }
 
     @Transactional
     public void validerTransfert(Long id) {
         Demande d = demandeRepository.findById(id).orElseThrow();
+        if (d.getStatut() != Demande.STATUT_TRANSFERT_SCANNE) {
+            throw new RuntimeException("Le transfert doit etre scanne avant validation");
+        }
         d.setStatut(Demande.STATUT_TRANSFERT_VALIDE);
         demandeRepository.save(d);
         enregistrerChangementStatut(d, Demande.STATUT_TRANSFERT_VALIDE);
@@ -151,6 +190,9 @@ public class TransfertService {
     @Transactional
     public void rejeterTransfert(Long id) {
         Demande d = demandeRepository.findById(id).orElseThrow();
+        if (d.getStatut() != Demande.STATUT_TRANSFERT_SCANNE) {
+            throw new RuntimeException("Le transfert doit etre scanne avant rejet");
+        }
         d.setStatut(Demande.STATUT_TRANSFERT_REJETE);
         demandeRepository.save(d);
         enregistrerChangementStatut(d, Demande.STATUT_TRANSFERT_REJETE);
@@ -159,6 +201,9 @@ public class TransfertService {
     @Transactional
     public CarteResident emettreTransfert(Long id) {
         Demande demande = demandeRepository.findById(id).orElseThrow(() -> new RuntimeException("Demande introuvable"));
+        if (demande.getStatut() != Demande.STATUT_TRANSFERT_VALIDE) {
+            throw new RuntimeException("La demande doit etre validee avant emission");
+        }
         DemandeTransfert detail = demandeTransfertRepository.findByDemandeId(id)
                 .orElseThrow(() -> new RuntimeException("Détails du transfert introuvables"));
         
@@ -213,5 +258,12 @@ public class TransfertService {
         sd.setStatut(statut);
         sd.setDateChangementStatut(LocalDate.now());
         statutDemandeRepository.save(sd);
+    }
+
+    private String normaliserNumero(String numero) {
+        if (numero == null) {
+            return null;
+        }
+        return numero.trim().toUpperCase();
     }
 }

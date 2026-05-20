@@ -116,11 +116,13 @@ public class DemandeController {
 
     @GetMapping("/{id}/pieces")
     public ResponseEntity<List<PieceDemande>> getPieces(@PathVariable("id") Long id) {
+        demandeService.initialiserPiecesPourUpload(id);
         return ResponseEntity.ok(pieceDemandeRepository.findByDemandeId(id));
     }
 
     @GetMapping("/{id}/pieces-specifiques")
     public ResponseEntity<List<PieceDemandeSpecifique>> getPiecesSpecifiques(@PathVariable("id") Long id) {
+        demandeService.initialiserPiecesPourUpload(id);
         return ResponseEntity.ok(pieceDemandeSpecifiqueRepository.findByDemandeId(id));
     }
 

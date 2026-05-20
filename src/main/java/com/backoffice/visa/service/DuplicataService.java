@@ -17,6 +17,7 @@ public class DuplicataService {
     private final DemandeDuplicataRepository demandeDuplicataRepository;
     private final StatutDemandeRepository statutDemandeRepository;
     private final TypeDemandeRepository typeDemandeRepository;
+    private final DemandeService demandeService;
     private final com.backoffice.visa.repository.PasseportRepository passeportRepository;
 
     public DuplicataService(
@@ -25,12 +26,14 @@ public class DuplicataService {
             DemandeDuplicataRepository demandeDuplicataRepository,
             StatutDemandeRepository statutDemandeRepository,
             TypeDemandeRepository typeDemandeRepository,
+            DemandeService demandeService,
             com.backoffice.visa.repository.PasseportRepository passeportRepository) {
         this.demandeRepository = demandeRepository;
         this.carteResidentRepository = carteResidentRepository;
         this.demandeDuplicataRepository = demandeDuplicataRepository;
         this.statutDemandeRepository = statutDemandeRepository;
         this.typeDemandeRepository = typeDemandeRepository;
+        this.demandeService = demandeService;
         this.passeportRepository = passeportRepository;
     }
 
@@ -62,6 +65,10 @@ public class DuplicataService {
         }
 
         return demandeOpt.filter(this::estEligibleAuDuplicata);
+    }
+
+    public Optional<DemandeDuplicata> findByDemandeId(Long demandeId) {
+        return demandeDuplicataRepository.findByDemandeId(demandeId);
     }
 
     private boolean estEligibleAuDuplicata(Demande d) {
@@ -104,7 +111,9 @@ public class DuplicataService {
 
         // RÈGLE : Pas de demande de duplicata déjà en cours pour ce demandeur
         boolean aDejaUneDemandeEnCours = demandeRepository.findByDemandeurId(demandeOrigine.getDemandeur().getId()).stream()
-                .anyMatch(d -> d.getStatut() == Demande.STATUT_DUPLICATA_DEMANDE || d.getStatut() == Demande.STATUT_DUPLICATA_VALIDE);
+                .anyMatch(d -> d.getStatut() == Demande.STATUT_DUPLICATA_DEMANDE
+                        || d.getStatut() == Demande.STATUT_DUPLICATA_SCANNE
+                        || d.getStatut() == Demande.STATUT_DUPLICATA_VALIDE);
         
         if (aDejaUneDemandeEnCours) {
             throw new RuntimeException("Une demande de duplicata est déjà en cours pour ce demandeur");
@@ -159,7 +168,17 @@ public class DuplicataService {
         // RÈGLE : Un duplicata conserve la date d'expiration de la carte d'origine
         detail.setDateExpirationDuplicata(carteOrigine.getDateFin());
         
-        return demandeDuplicataRepository.save(detail);
+        DemandeDuplicata detailEnregistre = demandeDuplicataRepository.save(detail);
+        demandeService.initialiserPiecesPourUpload(demandeDuplicata);
+        return detailEnregistre;
+    }
+
+    @Transactional
+    public void scannerDuplicata(Long duplicataDemandeId) {
+        demandeDuplicataRepository.findByDemandeId(duplicataDemandeId)
+                .orElseThrow(() -> new RuntimeException("Détails du duplicata introuvables"));
+
+        demandeService.scannerDossier(duplicataDemandeId);
     }
 
     @Transactional
@@ -167,8 +186,8 @@ public class DuplicataService {
         Demande demande = demandeRepository.findById(duplicataDemandeId)
                 .orElseThrow(() -> new RuntimeException("Demande de duplicata introuvable"));
         
-        if (demande.getStatut() != Demande.STATUT_DUPLICATA_DEMANDE) {
-            throw new RuntimeException("Statut invalide pour validation");
+        if (demande.getStatut() != Demande.STATUT_DUPLICATA_SCANNE) {
+            throw new RuntimeException("Le duplicata doit etre scanne avant validation");
         }
         
         demande.setStatut(Demande.STATUT_DUPLICATA_VALIDE);
@@ -181,8 +200,8 @@ public class DuplicataService {
         Demande demande = demandeRepository.findById(duplicataDemandeId)
                 .orElseThrow(() -> new RuntimeException("Demande de duplicata introuvable"));
         
-        if (demande.getStatut() != Demande.STATUT_DUPLICATA_DEMANDE) {
-            throw new RuntimeException("Statut invalide pour rejet");
+        if (demande.getStatut() != Demande.STATUT_DUPLICATA_SCANNE) {
+            throw new RuntimeException("Le duplicata doit etre scanne avant rejet");
         }
         
         demande.setStatut(Demande.STATUT_DUPLICATA_REJETE);

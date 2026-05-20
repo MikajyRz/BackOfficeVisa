@@ -37,10 +37,12 @@ tbody tr:hover { background: #ebf5fb; }
 .badge-cree { background: #d4edda; color: #155724; }
 .badge-termine { background: #d1ecf1; color: #0c5460; }
 .badge-duplicata-demande { background: #fff3cd; color: #856404; }
+.badge-duplicata-scanne { background: #ffe8a1; color: #6b4b00; }
 .badge-duplicata-valide { background: #cce5ff; color: #004085; }
 .badge-duplicata-rejete { background: #f8d7da; color: #721c24; }
 .badge-duplicata-emis { background: #d4edda; color: #155724; }
 .badge-transfert-demande { background: #f3e5f5; color: #7b1fa2; }
+.badge-transfert-scanne { background: #e8d7f2; color: #5e2477; }
 .badge-transfert-valide { background: #e1bee7; color: #6a1b9a; }
 .badge-transfert-rejete { background: #ffebee; color: #c62828; }
 .badge-transfert-emis { background: #d4edda; color: #155724; }

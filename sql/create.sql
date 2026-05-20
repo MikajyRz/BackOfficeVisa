@@ -5,10 +5,12 @@
 -- Suppression des données
 DELETE FROM Piece_demande_specifique;
 DELETE FROM Piece_demande;
+DELETE FROM Historique_passeport_visa;
 DELETE FROM carte_resident;
 DELETE FROM Visa;
 DELETE FROM Statut_demande;
 DELETE FROM Demande;
+DELETE FROM Statut;
 DELETE FROM Visa_transformable;
 DELETE FROM Passeport;
 DELETE FROM Demandeur;
@@ -22,10 +24,12 @@ DELETE FROM Nationalite;
 -- Suppression des tables
 DROP TABLE IF EXISTS Piece_demande_specifique;
 DROP TABLE IF EXISTS Piece_demande;
+DROP TABLE IF EXISTS Historique_passeport_visa;
 DROP TABLE IF EXISTS carte_resident;
 DROP TABLE IF EXISTS Visa;
 DROP TABLE IF EXISTS Statut_demande;
 DROP TABLE IF EXISTS Demande;
+DROP TABLE IF EXISTS Statut;
 DROP TABLE IF EXISTS Visa_transformable;
 DROP TABLE IF EXISTS Passeport;
 DROP TABLE IF EXISTS Demandeur;
@@ -56,6 +60,13 @@ CREATE TABLE type_visa (
 CREATE TABLE Type_demande (
     id SERIAL PRIMARY KEY,
     libelle VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE Statut (
+    id INT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    libelle VARCHAR(100) NOT NULL,
+    ordre_affichage INT NOT NULL
 );
 
 CREATE TABLE Demandeur (
@@ -107,6 +118,7 @@ CREATE TABLE Demande (
     FOREIGN KEY (id_type_demande) REFERENCES Type_demande(id),
     FOREIGN KEY (id_demandeur) REFERENCES Demandeur(id),
     FOREIGN KEY (id_type_visa) REFERENCES type_visa(id),
+    FOREIGN KEY (id_statut) REFERENCES Statut(id),
     FOREIGN KEY (id_visa_transformable) REFERENCES Visa_transformable(id)
 );
 
@@ -115,7 +127,8 @@ CREATE TABLE Statut_demande (
     id_demande INT NOT NULL,
     statut INT NOT NULL,
     date_changement_statut DATE,
-    FOREIGN KEY (id_demande) REFERENCES Demande(id)
+    FOREIGN KEY (id_demande) REFERENCES Demande(id),
+    FOREIGN KEY (statut) REFERENCES Statut(id)
 );
 
 CREATE TABLE Type_piece_commune (
@@ -200,6 +213,21 @@ INSERT INTO Situation_familiale (libelle) VALUES ('Célibataire'), ('Marié(e)')
 INSERT INTO type_visa (libelle) VALUES ('Investisseur'), ('Travailleur');
 
 INSERT INTO Type_demande (libelle) VALUES ('Nouveau titre'), ('Duplicata'), ('Transfert de visa');
+
+INSERT INTO Statut (id, code, libelle, ordre_affichage) VALUES
+(1, 'CREATION', 'Dossier créé', 1),
+(2, 'SCANNE', 'Dossier scanné', 2),
+(3, 'TERMINE', 'Dossier terminé', 3),
+(10, 'DUPLICATA_DEMANDE', 'Duplicata demandé', 10),
+(11, 'DUPLICATA_SCANNE', 'Duplicata scanné', 11),
+(12, 'DUPLICATA_VALIDE', 'Duplicata validé', 12),
+(13, 'DUPLICATA_REJETE', 'Duplicata rejeté', 13),
+(14, 'DUPLICATA_EMIS', 'Duplicata émis', 14),
+(20, 'TRANSFERT_DEMANDE', 'Transfert demandé', 20),
+(21, 'TRANSFERT_SCANNE', 'Transfert scanné', 21),
+(22, 'TRANSFERT_VALIDE', 'Transfert validé', 22),
+(23, 'TRANSFERT_REJETE', 'Transfert rejeté', 23),
+(24, 'TRANSFERT_EMIS', 'Transfert émis', 24);
 
 INSERT INTO Type_piece_commune (libelle, obligatoire) VALUES
 ('02 photos d''identité récentes', TRUE),

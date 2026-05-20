@@ -18,6 +18,10 @@ public class StatutDemande {
     @Column(nullable = false)
     private Integer statut;
 
+    @ManyToOne
+    @JoinColumn(name = "statut", nullable = false, insertable = false, updatable = false)
+    private Statut statutReference;
+
     @Column(name = "date_changement_statut")
     private LocalDate dateChangementStatut;
 
@@ -29,6 +33,11 @@ public class StatutDemande {
     public void setDemande(Demande demande) { this.demande = demande; }
     public Integer getStatut() { return statut; }
     public void setStatut(Integer statut) { this.statut = statut; }
+    public Statut getStatutReference() { return statutReference; }
+    public void setStatutReference(Statut statutReference) { this.statutReference = statutReference; }
     public LocalDate getDateChangementStatut() { return dateChangementStatut; }
     public void setDateChangementStatut(LocalDate dateChangementStatut) { this.dateChangementStatut = dateChangementStatut; }
+    public String getStatutLibelle() {
+        return statutReference != null ? statutReference.getLibelle() : "Inconnu (" + statut + ")";
+    }
 }

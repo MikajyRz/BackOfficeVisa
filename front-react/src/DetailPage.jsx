@@ -33,13 +33,15 @@ export default function DetailPage() {
       case 2: return 'badge-termine';
       case 3: return 'badge-termine';
       case 10: return 'badge-duplicata-demande';
-      case 11: return 'badge-duplicata-valide';
-      case 12: return 'badge-duplicata-rejete';
-      case 13: return 'badge-duplicata-emis';
+      case 11: return 'badge-duplicata-scanne';
+      case 12: return 'badge-duplicata-valide';
+      case 13: return 'badge-duplicata-rejete';
+      case 14: return 'badge-duplicata-emis';
       case 20: return 'badge-transfert-demande';
-      case 21: return 'badge-transfert-valide';
-      case 22: return 'badge-transfert-rejete';
-      case 23: return 'badge-transfert-emis';
+      case 21: return 'badge-transfert-scanne';
+      case 22: return 'badge-transfert-valide';
+      case 23: return 'badge-transfert-rejete';
+      case 24: return 'badge-transfert-emis';
       default: return '';
     }
   };
@@ -50,13 +52,15 @@ export default function DetailPage() {
       case 2: return "Dossier scanné";
       case 3: return "Dossier terminé";
       case 10: return "Duplicata demandé";
-      case 11: return "Duplicata validé";
-      case 12: return "Duplicata rejeté";
-      case 13: return "Duplicata émis";
+      case 11: return "Duplicata scanné";
+      case 12: return "Duplicata validé";
+      case 13: return "Duplicata rejeté";
+      case 14: return "Duplicata émis";
       case 20: return "Transfert demandé";
-      case 21: return "Transfert validé";
-      case 22: return "Transfert rejeté";
-      case 23: return "Transfert émis";
+      case 21: return "Transfert scanné";
+      case 22: return "Transfert validé";
+      case 23: return "Transfert rejeté";
+      case 24: return "Transfert émis";
       default: return "Inconnu (" + statut + ")";
     }
   };

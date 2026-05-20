@@ -1,3 +1,17 @@
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 1, 'CREATION', 'Dossier créé', 1 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 1);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 2, 'SCANNE', 'Dossier scanné', 2 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 2);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 3, 'TERMINE', 'Dossier terminé', 3 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 3);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 10, 'DUPLICATA_DEMANDE', 'Duplicata demandé', 10 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 10);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 11, 'DUPLICATA_SCANNE', 'Duplicata scanné', 11 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 11);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 12, 'DUPLICATA_VALIDE', 'Duplicata validé', 12 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 12);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 13, 'DUPLICATA_REJETE', 'Duplicata rejeté', 13 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 13);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 14, 'DUPLICATA_EMIS', 'Duplicata émis', 14 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 14);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 20, 'TRANSFERT_DEMANDE', 'Transfert demandé', 20 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 20);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 21, 'TRANSFERT_SCANNE', 'Transfert scanné', 21 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 21);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 22, 'TRANSFERT_VALIDE', 'Transfert validé', 22 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 22);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 23, 'TRANSFERT_REJETE', 'Transfert rejeté', 23 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 23);
+INSERT INTO statut (id, code, libelle, ordre_affichage) SELECT 24, 'TRANSFERT_EMIS', 'Transfert émis', 24 WHERE NOT EXISTS (SELECT 1 FROM statut WHERE id = 24);
+
 INSERT INTO nationalite (libelle) SELECT 'Française' WHERE NOT EXISTS (SELECT 1 FROM nationalite WHERE libelle = 'Française');
 INSERT INTO nationalite (libelle) SELECT 'Malgache' WHERE NOT EXISTS (SELECT 1 FROM nationalite WHERE libelle = 'Malgache');
 INSERT INTO nationalite (libelle) SELECT 'Chinoise' WHERE NOT EXISTS (SELECT 1 FROM nationalite WHERE libelle = 'Chinoise');

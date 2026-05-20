@@ -455,8 +455,10 @@
         body: JSON.stringify(payload)
       });
       if (resp.ok) {
-        showAlert("Demande de transfert créée !");
-        setTimeout(() => window.location.href = 'demandes.html', 2000);
+        const data = await resp.json();
+        const demandeId = data.demande ? data.demande.id : data.id;
+        showAlert("Demande de transfert creee ! Importez maintenant les pieces justificatives pour scanner le dossier.");
+        setTimeout(() => window.location.href = 'upload.html?id=' + demandeId, 1500);
       } else {
         const err = await resp.json();
         showAlert("Erreur : " + (err.error || "Échec"), "error");

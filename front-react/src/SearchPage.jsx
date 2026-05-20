@@ -36,13 +36,15 @@ export default function SearchPage() {
       case 2: return 'badge-termine';
       case 3: return 'badge-termine';
       case 10: return 'badge-duplicata-demande';
-      case 11: return 'badge-duplicata-valide';
-      case 12: return 'badge-duplicata-rejete';
-      case 13: return 'badge-duplicata-emis';
+      case 11: return 'badge-duplicata-scanne';
+      case 12: return 'badge-duplicata-valide';
+      case 13: return 'badge-duplicata-rejete';
+      case 14: return 'badge-duplicata-emis';
       case 20: return 'badge-transfert-demande';
-      case 21: return 'badge-transfert-valide';
-      case 22: return 'badge-transfert-rejete';
-      case 23: return 'badge-transfert-emis';
+      case 21: return 'badge-transfert-scanne';
+      case 22: return 'badge-transfert-valide';
+      case 23: return 'badge-transfert-rejete';
+      case 24: return 'badge-transfert-emis';
       default: return '';
     }
   };

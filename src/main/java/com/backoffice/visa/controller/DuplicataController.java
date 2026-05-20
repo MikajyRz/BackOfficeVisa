@@ -50,6 +50,16 @@ public class DuplicataController {
         }
     }
 
+    @PutMapping("/{id}/scanner")
+    public ResponseEntity<?> scanner(@PathVariable("id") Long id) {
+        try {
+            duplicataService.scannerDuplicata(id);
+            return ResponseEntity.ok(Map.of("message", "Demande de duplicata scannee"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PutMapping("/{id}/valider")
     public ResponseEntity<?> valider(@PathVariable("id") Long id) {
         try {
@@ -83,5 +93,12 @@ public class DuplicataController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/demande/{demandeId}")
+    public ResponseEntity<?> getByDemandeId(@PathVariable("demandeId") Long demandeId) {
+        return duplicataService.findByDemandeId(demandeId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

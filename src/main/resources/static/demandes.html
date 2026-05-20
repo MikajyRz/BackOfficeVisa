@@ -35,10 +35,12 @@
     .badge-cree { background: #d4edda; color: #155724; }
     .badge-termine { background: #d1ecf1; color: #0c5460; }
     .badge-duplicata-demande { background: #fff3cd; color: #856404; }
+    .badge-duplicata-scanne { background: #ffe8a1; color: #6b4b00; }
     .badge-duplicata-valide { background: #cce5ff; color: #004085; }
     .badge-duplicata-rejete { background: #f8d7da; color: #721c24; }
     .badge-duplicata-emis { background: #d4edda; color: #155724; }
     .badge-transfert-demande { background: #f3e5f5; color: #7b1fa2; }
+    .badge-transfert-scanne { background: #e8d7f2; color: #5e2477; }
     .badge-transfert-valide { background: #e1bee7; color: #6a1b9a; }
     .badge-transfert-rejete { background: #ffebee; color: #c62828; }
     .badge-transfert-emis { background: #d4edda; color: #155724; }
@@ -103,17 +105,19 @@
       <input type="text" id="filter-search" placeholder="Rechercher par nom ou prénom..." oninput="filtrerDemandes()" />
       <select id="filter-statut" onchange="filtrerDemandes()">
         <option value="">Tous les statuts</option>
-        <option value="1">Dossier créé</option>
-        <option value="2">Dossier scanné</option>
-        <option value="3">Dossier terminé</option>
-        <option value="10">Duplicata demandé</option>
-        <option value="11">Duplicata validé</option>
-        <option value="12">Duplicata rejeté</option>
-        <option value="13">Duplicata émis</option>
-        <option value="20">Transfert demandé</option>
-        <option value="21">Transfert validé</option>
-        <option value="22">Transfert rejeté</option>
-        <option value="23">Transfert émis</option>
+        <option value="1">Dossier cree</option>
+        <option value="2">Dossier scanne</option>
+        <option value="3">Dossier termine</option>
+        <option value="10">Duplicata demande</option>
+        <option value="11">Duplicata scanne</option>
+        <option value="12">Duplicata valide</option>
+        <option value="13">Duplicata rejete</option>
+        <option value="14">Duplicata emis</option>
+        <option value="20">Transfert demande</option>
+        <option value="21">Transfert scanne</option>
+        <option value="22">Transfert valide</option>
+        <option value="23">Transfert rejete</option>
+        <option value="24">Transfert emis</option>
       </select>
       <select id="filter-type-demande" onchange="filtrerDemandes()">
         <option value="">Tous les types de demande</option>
@@ -194,13 +198,15 @@
       case 2: return 'badge-termine';
       case 3: return 'badge-termine';
       case 10: return 'badge-duplicata-demande';
-      case 11: return 'badge-duplicata-valide';
-      case 12: return 'badge-duplicata-rejete';
-      case 13: return 'badge-duplicata-emis';
+      case 11: return 'badge-duplicata-scanne';
+      case 12: return 'badge-duplicata-valide';
+      case 13: return 'badge-duplicata-rejete';
+      case 14: return 'badge-duplicata-emis';
       case 20: return 'badge-transfert-demande';
-      case 21: return 'badge-transfert-valide';
-      case 22: return 'badge-transfert-rejete';
-      case 23: return 'badge-transfert-emis';
+      case 21: return 'badge-transfert-scanne';
+      case 22: return 'badge-transfert-valide';
+      case 23: return 'badge-transfert-rejete';
+      case 24: return 'badge-transfert-emis';
       default: return '';
     }
   }
@@ -222,15 +228,19 @@
       if (d.statut === 2) {
         actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); terminerDossier(${d.id})">Terminer</button>`;
       } else if (d.statut === 10) {
+        actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+      } else if (d.statut === 11) {
         actions += `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); validerDuplicata(${d.id})">Valider</button> `;
         actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterDuplicata(${d.id})">Rejeter</button>`;
-      } else if (d.statut === 11) {
-        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreDuplicata(${d.id})">Émettre Carte</button>`;
+      } else if (d.statut === 12) {
+        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreDuplicata(${d.id})">Emettre Carte</button>`;
       } else if (d.statut === 20) {
+        actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); importerPieces(${d.id})">Importer pieces</button>`;
+      } else if (d.statut === 21) {
         actions += `<button class="btn btn-primary btn-sm" style="background:#8e44ad" onclick="event.stopPropagation(); validerTransfert(${d.id})">Valider</button> `;
         actions += `<button class="btn btn-secondary btn-sm" style="background:#e74c3c" onclick="event.stopPropagation(); rejeterTransfert(${d.id})">Rejeter</button>`;
-      } else if (d.statut === 21) {
-        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreTransfert(${d.id})">Transférer</button>`;
+      } else if (d.statut === 22) {
+        actions += `<button class="btn btn-success btn-sm" onclick="event.stopPropagation(); emettreTransfert(${d.id})">Transferer</button>`;
       }
 
       return `
@@ -245,6 +255,17 @@
         </tr>
       `;
     }).join('');
+  }
+
+  async function scannerDuplicata(id) {
+    if (!confirm('Scanner cette demande de duplicata ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/duplicata/${id}/scanner`, { method: 'PUT' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors du scan');
+      showAlert('Demande de duplicata scannee', 'success');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
   }
 
   async function validerDuplicata(id) {
@@ -274,6 +295,17 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'émission');
       showAlert('Duplicata émis avec succès : ' + data.reference, 'success');
+      chargerDemandes();
+    } catch (e) { showAlert(e.message, 'error'); }
+  }
+
+  async function scannerTransfert(id) {
+    if (!confirm('Scanner cette demande de transfert ?')) return;
+    try {
+      const res = await fetch(`/api/cartes-resident/transfert/${id}/scanner`, { method: 'PUT' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors du scan');
+      showAlert('Demande de transfert scannee', 'success');
       chargerDemandes();
     } catch (e) { showAlert(e.message, 'error'); }
   }
@@ -330,6 +362,10 @@
     window.location.href = 'detail.html?id=' + id;
   }
 
+  function importerPieces(id) {
+    window.location.href = 'upload.html?id=' + id;
+  }
+
   async function terminerDossier(id) {
     if (!confirm('Confirmer ? Le dossier #' + id + ' sera terminé et la carte résident sera générée. Cette action est irréversible.')) return;
     try {
@@ -355,3 +391,6 @@
 </script>
 </body>
 </html>
+
+
+
