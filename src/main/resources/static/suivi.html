@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Suivi de dossier</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f4f6f8;
+      color: #2c3e50;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #1a5276;
+      color: #fff;
+      padding: 18px 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 1.1em; font-weight: 700; }
+    .header p  { font-size: 0.82em; opacity: 0.8; margin-top: 4px; }
+
+    .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8c9aaa;
+    }
+    .spinner {
+      display: inline-block;
+      width: 32px; height: 32px;
+      border: 3px solid #d5dce3;
+      border-top-color: #1a5276;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box {
+      background: #ffebee;
+      border: 1px solid #ffcdd2;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      color: #c62828;
+      margin-top: 40px;
+    }
+    .error-box h3 { margin-bottom: 8px; }
+
+    /* Card */
+    .card {
+      background: #fff;
+      border: 1px solid #e2e6ea;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: #1a5276;
+      color: #fff;
+      padding: 14px 18px;
+      font-size: 0.85em;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-body { padding: 16px 18px; }
+
+    /* Référence badge */
+    .ref-block {
+      text-align: center;
+      padding: 24px 20px 20px;
+    }
+    .ref-label { font-size: 0.8em; color: #8c9aaa; margin-bottom: 6px; }
+    .ref-code {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: #1a5276;
+      letter-spacing: 2px;
+    }
+
+    /* Statut badge */
+    .statut-block {
+      text-align: center;
+      padding: 18px 20px;
+      border-top: 1px solid #f0f2f5;
+    }
+    .statut-label { font-size: 0.8em; color: #8c9aaa; margin-bottom: 8px; }
+    .badge {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.88em;
+      font-weight: 700;
+    }
+    .badge-cree      { background: #d4edda; color: #155724; }
+    .badge-photo     { background: #fff3cd; color: #856404; }
+    .badge-scanne    { background: #d1ecf1; color: #0c5460; }
+    .badge-termine   { background: #cce5ff; color: #004085; }
+    .badge-rejete    { background: #f8d7da; color: #721c24; }
+    .badge-other     { background: #e2e6ea; color: #495057; }
+
+    /* Info rows */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #f4f6f8;
+      font-size: 0.9em;
+      gap: 12px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row-label { color: #8c9aaa; font-size: 0.85em; flex-shrink: 0; }
+    .info-row-value { color: #2c3e50; font-weight: 600; text-align: right; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 24px 20px;
+      font-size: 0.78em;
+      color: #a0aab4;
+    }
+
+    /* Date traitement highlight */
+    .date-traitement-block {
+      background: #e8f5e9;
+      border: 1px solid #c8e6c9;
+      border-radius: 8px;
+      padding: 14px 18px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .date-traitement-block .dt-label { font-size: 0.8em; color: #388e3c; margin-bottom: 4px; }
+    .date-traitement-block .dt-value { font-size: 1.1em; font-weight: 700; color: #2e7d32; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Back Office Visa — Madagascar</h1>
+  <p>Suivi de dossier en ligne</p>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement du dossier...</p>
+  </div>
+  <div id="content" style="display:none;"></div>
+  <div id="error"   style="display:none;"></div>
+</div>
+
+<div class="footer">
+  &copy; Back Office Visa Madagascar — Consultation publique
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+
+  function getBadgeClass(statut) {
+    if (statut === 1)  return 'badge-cree';
+    if (statut === 2 || statut === 11 || statut === 21) return 'badge-photo';
+    if (statut === 3 || statut === 12 || statut === 22) return 'badge-scanne';
+    if ([4, 13, 15, 23, 25].includes(statut)) return 'badge-termine';
+    if (statut === 14 || statut === 24) return 'badge-rejete';
+    return 'badge-other';
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const [y, m, d] = dateStr.split('-');
+    return d + '/' + m + '/' + y;
+  }
+
+  async function charger() {
+    if (!ref) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').innerHTML = `
+        <div class="error-box">
+          <h3>Référence manquante</h3>
+          <p>Ce lien QR code ne contient pas de référence de dossier.</p>
+        </div>`;
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/public/suivi/' + ref);
+      const data = await res.json();
+
+      document.getElementById('loading').style.display = 'none';
+
+      if (!res.ok) {
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').innerHTML = `
+          <div class="error-box">
+            <h3>Dossier introuvable</h3>
+            <p>${data.erreur || 'Ce dossier n\'existe pas.'}</p>
+          </div>`;
+        return;
+      }
+
+      document.title = 'Dossier ' + data.reference + ' — Suivi';
+
+      let html = '';
+
+      // Référence + Statut
+      html += `
+        <div class="card">
+          <div class="ref-block">
+            <div class="ref-label">Référence du dossier</div>
+            <div class="ref-code">${data.reference}</div>
+          </div>
+          <div class="statut-block">
+            <div class="statut-label">Statut actuel</div>
+            <span class="badge ${getBadgeClass(data.statut)}">${data.statutLibelle}</span>
+          </div>
+        </div>`;
+
+      // Date de traitement si disponible
+      if (data.dateTraitement) {
+        html += `
+          <div class="date-traitement-block">
+            <div class="dt-label">Date de traitement</div>
+            <div class="dt-value">${formatDate(data.dateTraitement)}</div>
+          </div>`;
+      }
+
+      // Informations du dossier
+      html += `<div class="card"><div class="card-header">Informations du dossier</div><div class="card-body">`;
+
+      const nom = (data.nom || '') + ' ' + (data.prenom || '');
+      html += infoRow('Demandeur', nom.trim() || '—');
+      html += infoRow('Type de visa', data.typeVisa || '—');
+      html += infoRow('Type de demande', data.typeDemande || '—');
+      html += infoRow('Date de demande', formatDate(data.dateDemande));
+
+      html += `</div></div>`;
+
+      document.getElementById('content').innerHTML = html;
+      document.getElementById('content').style.display = 'block';
+
+    } catch (e) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').innerHTML = `
+        <div class="error-box">
+          <h3>Erreur de connexion</h3>
+          <p>Impossible de contacter le serveur. Vérifiez votre connexion réseau.</p>
+        </div>`;
+    }
+  }
+
+  function infoRow(label, value) {
+    return `<div class="info-row">
+      <span class="info-row-label">${label}</span>
+      <span class="info-row-value">${value}</span>
+    </div>`;
+  }
+
+  charger();
+</script>
+</body>
+</html>

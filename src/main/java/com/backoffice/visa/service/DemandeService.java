@@ -275,7 +275,7 @@ public class DemandeService {
                 .orElseThrow(() -> new RuntimeException("Demande introuvable"));
 
         int nouveauStatut;
-        if (demande.getStatut() == Demande.STATUT_SIGNATURE_TERMINEE) {
+        if (demande.getStatut() == Demande.STATUT_PHOTO_PRISE) {
             nouveauStatut = Demande.STATUT_SCANNE;
         } else if (demande.getStatut() == Demande.STATUT_DUPLICATA_SIGNATURE_TERMINEE) {
             nouveauStatut = Demande.STATUT_DUPLICATA_SCANNE;

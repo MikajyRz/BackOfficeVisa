@@ -26,7 +26,7 @@ UPDATE demande SET id_statut = 22 WHERE id_statut = 21 AND EXISTS (SELECT 1 FROM
 UPDATE statut_demande SET statut = 22 WHERE statut = 21 AND EXISTS (SELECT 1 FROM statut WHERE id = 21 AND code = 'TRANSFERT_SCANNE');
 
 INSERT INTO statut (id, code, libelle, ordre_affichage) VALUES (1, 'CREATION', 'Dossier cree', 1) ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle, ordre_affichage = EXCLUDED.ordre_affichage;
-INSERT INTO statut (id, code, libelle, ordre_affichage) VALUES (2, 'SIGNATURE_TERMINEE', 'Signature terminee', 2) ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle, ordre_affichage = EXCLUDED.ordre_affichage;
+INSERT INTO statut (id, code, libelle, ordre_affichage) VALUES (2, 'PHOTO_PRISE', 'Photo prise', 2) ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle, ordre_affichage = EXCLUDED.ordre_affichage;
 INSERT INTO statut (id, code, libelle, ordre_affichage) VALUES (3, 'SCANNE', 'Dossier scanne', 3) ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle, ordre_affichage = EXCLUDED.ordre_affichage;
 INSERT INTO statut (id, code, libelle, ordre_affichage) VALUES (4, 'TERMINE', 'Dossier termine', 4) ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle, ordre_affichage = EXCLUDED.ordre_affichage;
 INSERT INTO statut (id, code, libelle, ordre_affichage) VALUES (10, 'DUPLICATA_DEMANDE', 'Duplicata demande', 10) ON CONFLICT (id) DO UPDATE SET code = EXCLUDED.code, libelle = EXCLUDED.libelle, ordre_affichage = EXCLUDED.ordre_affichage;

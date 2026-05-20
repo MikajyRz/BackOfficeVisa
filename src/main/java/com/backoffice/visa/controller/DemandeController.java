@@ -2,9 +2,11 @@ package com.backoffice.visa.controller;
 
 import com.backoffice.visa.dto.DemandeFormDTO;
 import com.backoffice.visa.entity.Demande;
+import com.backoffice.visa.entity.Demandeur;
 import com.backoffice.visa.entity.PieceDemande;
 import com.backoffice.visa.entity.PieceDemandeSpecifique;
 import com.backoffice.visa.entity.VisaTransformable;
+import com.backoffice.visa.repository.DemandeurRepository;
 import com.backoffice.visa.repository.PieceDemandeRepository;
 import com.backoffice.visa.repository.PieceDemandeSpecifiqueRepository;
 import com.backoffice.visa.repository.VisaTransformableRepository;
@@ -12,6 +14,7 @@ import com.backoffice.visa.service.DemandeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,13 +28,16 @@ public class DemandeController {
     private final VisaTransformableRepository visaTransformableRepository;
     private final PieceDemandeRepository pieceDemandeRepository;
     private final PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository;
+    private final DemandeurRepository demandeurRepository;
 
     public DemandeController(DemandeService demandeService, VisaTransformableRepository visaTransformableRepository,
-                             PieceDemandeRepository pieceDemandeRepository, PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository) {
+                             PieceDemandeRepository pieceDemandeRepository, PieceDemandeSpecifiqueRepository pieceDemandeSpecifiqueRepository,
+                             DemandeurRepository demandeurRepository) {
         this.demandeService = demandeService;
         this.visaTransformableRepository = visaTransformableRepository;
         this.pieceDemandeRepository = pieceDemandeRepository;
         this.pieceDemandeSpecifiqueRepository = pieceDemandeSpecifiqueRepository;
+        this.demandeurRepository = demandeurRepository;
     }
 
     @PostMapping
@@ -136,6 +142,35 @@ public class DemandeController {
     public ResponseEntity<Map<String, Boolean>> verifierNumeroVisa(@PathVariable("numero") String numero) {
         boolean existe = demandeService.numeroVisaDejaUtilise(numero);
         return ResponseEntity.ok(Map.of("existe", existe));
+    }
+
+    /**
+     * Mise à jour des informations du demandeur.
+     * Autorisée uniquement si le dossier est au statut PHOTO_PRISE (2).
+     */
+    @PutMapping("/{id}/demandeur")
+    public ResponseEntity<?> mettreAJourDemandeur(@PathVariable("id") Long id,
+                                                   @RequestBody Map<String, String> body) {
+        try {
+            Demande demande = demandeService.getDemandeById(id);
+            if (demande.getStatut() != Demande.STATUT_PHOTO_PRISE) {
+                return ResponseEntity.badRequest().body(Map.of("error",
+                        "La modification est possible uniquement au statut Photo prise."));
+            }
+            Demandeur dem = demande.getDemandeur();
+            if (body.containsKey("nom")) dem.setNom(body.get("nom"));
+            if (body.containsKey("prenom")) dem.setPrenom(body.get("prenom"));
+            if (body.containsKey("dateNaissance") && body.get("dateNaissance") != null && !body.get("dateNaissance").isBlank())
+                dem.setDateNaissance(LocalDate.parse(body.get("dateNaissance")));
+            if (body.containsKey("lieuNaissance")) dem.setLieuNaissance(body.get("lieuNaissance"));
+            if (body.containsKey("telephone")) dem.setTelephone(body.get("telephone"));
+            if (body.containsKey("email")) dem.setEmail(body.get("email"));
+            if (body.containsKey("adresse")) dem.setAdresse(body.get("adresse"));
+            demandeurRepository.save(dem);
+            return ResponseEntity.ok(Map.of("message", "Informations mises à jour."));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/visa-reference/{numero}")

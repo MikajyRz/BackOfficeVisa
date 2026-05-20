@@ -22,7 +22,7 @@ public class Demande {
     private Integer statut = STATUT_CREATION;
 
     public static final int STATUT_CREATION = 1;
-    public static final int STATUT_SIGNATURE_TERMINEE = 2;
+    public static final int STATUT_PHOTO_PRISE = 2;
     public static final int STATUT_SCANNE = 3;
     public static final int STATUT_TERMINE = 4;
 
@@ -86,7 +86,7 @@ public class Demande {
         }
         return switch (statut) {
             case STATUT_CREATION -> "Dossier cree";
-            case STATUT_SIGNATURE_TERMINEE -> "Signature terminee";
+            case STATUT_PHOTO_PRISE -> "Photo prise";
             case STATUT_SCANNE -> "Dossier scanne";
             case STATUT_TERMINE -> "Dossier termine";
             case STATUT_DUPLICATA_DEMANDE -> "Duplicata demande";

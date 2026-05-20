@@ -116,10 +116,10 @@ public class SignatureService {
 
     private int statutSignatureTerminee(Integer statutActuel) {
         if (statutActuel == Demande.STATUT_CREATION) {
-            return Demande.STATUT_SIGNATURE_TERMINEE;
+            return Demande.STATUT_PHOTO_PRISE;
         }
-        if (statutActuel == Demande.STATUT_SIGNATURE_TERMINEE) {
-            return Demande.STATUT_SIGNATURE_TERMINEE;
+        if (statutActuel == Demande.STATUT_PHOTO_PRISE) {
+            return Demande.STATUT_PHOTO_PRISE;
         }
         if (statutActuel == Demande.STATUT_DUPLICATA_DEMANDE) {
             return Demande.STATUT_DUPLICATA_SIGNATURE_TERMINEE;
